@@ -3,66 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Flight: Global Challenge</title>
+    <title>Neon Ghost</title>
     <style>
-        :root { --neon: #00ffcc; --gold: #ffd700; --bg: #050505; }
-        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; color: white; }
-        canvas { display: block; z-index: 1; }
+        :root { --neon: #ff00ff; --bg: #000; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Arial', sans-serif; touch-action: none; user-select: none; color: white; }
+        canvas { display: block; }
 
-        /* UI */
-        #ui { position: absolute; top: 10px; width: 100%; text-align: center; z-index: 10; pointer-events: none; }
-        #score { font-size: 50px; font-weight: 900; color: var(--neon); text-shadow: 0 0 20px var(--neon); }
+        #ui { position: absolute; top: 30px; width: 100%; text-align: center; pointer-events: none; z-index: 10; }
+        #score { font-size: 70px; font-weight: bold; color: var(--neon); text-shadow: 0 0 20px var(--neon); }
 
-        /* Overlay & Leaderboard */
         #overlay { 
-            position: absolute; inset: 0; background: rgba(0,0,0,0.95); 
+            position: absolute; inset: 0; background: rgba(0,0,0,0.9); 
             display: flex; flex-direction: column; justify-content: center; 
-            align-items: center; z-index: 100; padding: 20px;
+            align-items: center; z-index: 100;
         }
         
         .menu-box { 
-            background: #111; padding: 25px; border-radius: 20px; 
-            border: 2px solid var(--neon); text-align: center; width: 100%; max-width: 320px;
-            box-shadow: 0 0 50px rgba(0,255,204,0.1);
+            background: #050505; padding: 40px; border-radius: 50%; 
+            border: 4px solid var(--neon); text-align: center; width: 300px; height: 300px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-shadow: 0 0 60px rgba(255,0,255,0.2);
         }
 
-        h1 { color: var(--gold); margin: 0; font-size: 24px; text-transform: uppercase; }
-        .leaderboard { margin: 15px 0; background: #1a1a1a; padding: 10px; border-radius: 10px; text-align: left; font-size: 14px; }
-        .lb-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 4px 0; }
-        .lb-row.active { color: var(--neon); font-weight: bold; }
+        h1 { color: #fff; font-size: 20px; margin: 0; letter-spacing: 3px; }
+        #best-score { color: #00ffff; font-size: 14px; margin-top: 5px; }
 
         #start-btn { 
-            padding: 15px 40px; font-size: 20px; background: var(--neon); 
-            border: none; border-radius: 50px; color: #000; font-weight: bold; 
-            cursor: pointer; width: 100%; margin-top: 10px;
+            padding: 12px 30px; font-size: 18px; background: var(--neon); 
+            border: none; border-radius: 5px; color: #fff; font-weight: bold; 
+            cursor: pointer; margin-top: 15px; box-shadow: 0 0 15px var(--neon);
         }
 
-        .share-btn { 
-            background: #25D366; color: white; padding: 10px; border-radius: 50px; 
-            margin-top: 10px; text-decoration: none; display: block; font-weight: bold; font-size: 14px;
-        }
-
-        #ad-box { margin-top: 15px; border: 1px dashed #444; height: 100px; overflow: hidden; }
+        #ad-box { margin-top: 20px; width: 300px; height: 100px; overflow: hidden; }
     </style>
 </head>
-<body onpointerdown="jump()">
+<body onpointerdown="teleport()">
 
     <div id="ui"><div id="score">0</div></div>
 
     <div id="overlay">
         <div class="menu-box">
-            <h1 id="m-title">NEON FLIGHT</h1>
-            <p id="m-status">DÜNYA SIRALAMASI (GLOBAL)</p>
-            
-            <div id="leaderboard" class="leaderboard">
-                </div>
-
-            <button id="start-btn" onclick="event.stopPropagation(); startGame()">OYNA & SIRALAMAYA GİR</button>
-            <a id="share-link" class="share-btn" href="#" target="_blank" style="display:none;">SKORU PAYLAŞ (WHATSAPP)</a>
-            
-            <div id="ad-box">
-                <iframe id="ad-frame" width="300" height="100" frameborder="0" scrolling="no"></iframe>
-            </div>
+            <h1 id="m-title">NEON GHOST</h1>
+            <p id="best-score">EN İYİ: 0</p>
+            <button id="start-btn" onclick="event.stopPropagation(); startGame()">BAŞLA</button>
+        </div>
+        
+        <div id="ad-box">
+            <iframe id="ad-frame" width="300" height="100" frameborder="0" scrolling="no"></iframe>
         </div>
     </div>
 
@@ -74,8 +61,9 @@
     const adFrame = document.getElementById('ad-frame');
     const adLink = "https://omg10.com/4/10619187";
     
-    let score = 0, gameActive = false, player, pipes = [], frame = 0;
-    const fakeNames = ["ProGamer99", "RichBoy_01", "NeonKing", "Legend_X", "Slayer"];
+    let score = 0, bestScore = localStorage.getItem('bestGhost') || 0, gameActive = false;
+    let radius = 100, playerRadius = 130, obstacles = [], angle = 0;
+    let targetRadius = 130; // 130 dış, 70 iç
 
     function resize() {
         canvas.width = window.innerWidth;
@@ -84,109 +72,91 @@
     window.addEventListener('resize', resize);
     resize();
 
+    document.getElementById('best-score').innerText = "EN İYİ: " + bestScore;
+
     function startGame() {
-        score = 0; pipes = []; frame = 0;
-        player = { x: 50, y: canvas.height / 2, size: 20, velocity: 0, gravity: 0.5, lift: -8 };
-        gameActive = true;
+        score = 0; obstacles = []; gameActive = true;
         document.getElementById('score').innerText = "0";
         document.getElementById('overlay').style.display = 'none';
-        document.getElementById('ad-frame').src = "about:blank"; 
-        requestAnimationFrame(gameLoop);
+        adFrame.src = "about:blank";
+        spawnObstacle();
+        requestAnimationFrame(update);
     }
 
-    function jump() { if(gameActive) player.velocity = player.lift; }
+    function teleport() {
+        if(!gameActive) return;
+        targetRadius = (targetRadius === 130) ? 70 : 130;
+    }
+
+    function spawnObstacle() {
+        if(!gameActive) return;
+        let isInner = Math.random() > 0.5;
+        obstacles.push({
+            angle: 0,
+            orbit: isInner ? 70 : 130,
+            speed: 0.03 + (score * 0.001),
+            size: 20 + Math.random() * 20
+        });
+        setTimeout(spawnObstacle, Math.max(600, 1200 - (score * 40)));
+    }
 
     function gameOver() {
         gameActive = false;
+        if(score > bestScore) {
+            bestScore = score;
+            localStorage.setItem('bestGhost', bestScore);
+            document.getElementById('best-score').innerText = "YENİ REKOR: " + bestScore;
+        }
         document.getElementById('overlay').style.display = 'flex';
-        updateLeaderboard();
-        
-        // Paylaşım Linki
-        const shareMsg = `Neon Flight oyununda ${score} puan yaptım! Hadi gel beni geç: ${window.location.href}`;
-        document.getElementById('share-link').href = `https://wa.me/?text=${encodeURIComponent(shareMsg)}`;
-        document.getElementById('share-link').style.display = 'block';
-
-        // Reklam
-        document.getElementById('ad-frame').src = adLink;
+        adFrame.src = adLink;
     }
 
-    function updateLeaderboard() {
-        const lb = document.getElementById('leaderboard');
-        let html = '';
-        let sortedScores = fakeNames.map(name => ({ name, score: Math.floor(Math.random() * 50) + 10 }));
-        sortedScores.push({ name: "SEN (YOU)", score: score, active: true });
-        sortedScores.sort((a, b) => b.score - a.score);
-
-        sortedScores.slice(0, 5).forEach((item, i) => {
-            html += `<div class="lb-row ${item.active ? 'active' : ''}">
-                <span>${i+1}. ${item.name}</span>
-                <span>${item.score}</span>
-            </div>`;
-        });
-        lb.innerHTML = html;
-    }
-
-    function gameLoop() {
+    function update() {
         if(!gameActive) return;
-        frame++;
-        ctx.fillStyle = "#050505";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0,0,0,0.15)";
+        ctx.fillRect(0,0,canvas.width, canvas.height);
 
-        // Fizik
-        player.velocity += player.gravity;
-        player.y += player.velocity;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
 
-        // Çizim - Oyuncu (Neon Top)
-        ctx.fillStyle = "#00ffcc";
-        ctx.shadowBlur = 15; ctx.shadowColor = "#00ffcc";
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-        ctx.fill();
+        // Yörünge Çizgileri
+        ctx.strokeStyle = "#111"; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(cx, cy, 130, 0, Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy, 70, 0, Math.PI*2); ctx.stroke();
+
+        // Oyuncu (Yumuşak Işınlanma)
+        playerRadius += (targetRadius - playerRadius) * 0.3;
+        angle += 0.02;
+        let px = cx + Math.cos(angle) * playerRadius;
+        let py = cy + Math.sin(angle) * playerRadius;
+
+        ctx.fillStyle = "#fff"; ctx.shadowBlur = 20; ctx.shadowColor = "#fff";
+        ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI*2); ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Engel (Neon Borular)
-        if(frame % 90 === 0) {
-            let gap = 170;
-            let pos = Math.random() * (canvas.height - gap - 100) + 50;
-            pipes.push({ x: canvas.width, top: pos, bottom: canvas.height - pos - gap, passed: false });
-        }
+        // Engeller
+        for(let i = obstacles.length - 1; i >= 0; i--) {
+            let o = obstacles[i];
+            o.angle += o.speed;
+            let ox = cx + Math.cos(o.angle) * o.orbit;
+            let oy = cy + Math.sin(o.angle) * o.orbit;
 
-        for(let i = pipes.length - 1; i >= 0; i--) {
-            let p = pipes[i];
-            p.x -= 3.5;
-
-            ctx.fillStyle = "#1a1a1a";
-            ctx.strokeStyle = "#00ffcc";
-            ctx.lineWidth = 2;
-            
-            // Üst Boru
-            ctx.fillRect(p.x, 0, 50, p.top);
-            ctx.strokeRect(p.x, 0, 50, p.top);
-            // Alt Boru
-            ctx.fillRect(p.x, canvas.height - p.bottom, 50, p.bottom);
-            ctx.strokeRect(p.x, canvas.height - p.bottom, 50, p.bottom);
+            ctx.fillStyle = "#ff00ff";
+            ctx.beginPath(); ctx.arc(ox, oy, o.size/2, 0, Math.PI*2); ctx.fill();
 
             // Çarpışma
-            if(player.x + player.size > p.x && player.x - player.size < p.x + 50) {
-                if(player.y - player.size < p.top || player.y + player.size > canvas.height - p.bottom) {
-                    gameOver();
-                }
-            }
+            let dist = Math.hypot(px - ox, py - oy);
+            if(dist < 10 + o.size/2) gameOver();
 
-            if(!p.passed && p.x < player.x) {
-                p.passed = true;
+            // Puan (Tam tur atınca)
+            if(o.angle > Math.PI * 2) {
                 score++;
                 document.getElementById('score').innerText = score;
+                obstacles.splice(i, 1);
             }
-
-            if(p.x < -60) pipes.splice(i, 1);
         }
-
-        if(player.y > canvas.height || player.y < 0) gameOver();
-        else requestAnimationFrame(gameLoop);
+        requestAnimationFrame(update);
     }
-
-    updateLeaderboard(); // İlk açılışta göster
 </script>
 </body>
 </html>
