@@ -3,50 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Click Dash - Pro</title>
+    <title>Gravity Shift</title>
     <style>
-        :root { --primary: #00ffcc; --error: #ff3e3e; --bg: #0b0b0e; }
-        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; display: flex; flex-direction: column; height: 100vh; justify-content: center; align-items: center; user-select: none; }
-        
-        #lang-box { position: absolute; top: 20px; right: 20px; z-index: 1000; }
-        .l-btn { background: #1a1a1a; border: 1px solid var(--primary); color: white; padding: 8px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        :root { --primary: #00ffcc; --bg: #050505; }
+        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; }
+        canvas { display: block; }
 
-        #game-zone { width: 90%; max-width: 400px; text-align: center; position: relative; }
-        #score-display { font-size: 80px; font-weight: 900; color: rgba(255,255,255,0.1); margin-bottom: 10px; }
-        
-        /* Bar Geliştirmeleri */
-        #bar-container { width: 100%; height: 50px; background: #1a1a1a; border-radius: 10px; position: relative; overflow: hidden; border: 3px solid #333; transition: transform 0.1s; }
-        #target-zone { position: absolute; width: 60px; height: 100%; background: var(--primary); left: 50%; transform: translateX(-50%); box-shadow: 0 0 25px var(--primary); opacity: 0.6; }
-        #pointer { position: absolute; width: 8px; height: 100%; background: #fff; left: 0; box-shadow: 0 0 10px #fff; z-index: 5; }
+        /* UI Katmanları */
+        #ui { position: absolute; top: 20px; width: 100%; text-align: center; pointer-events: none; z-index: 10; }
+        #score { font-size: 60px; font-weight: 900; color: rgba(0, 255, 204, 0.2); }
 
-        .hit-effect { transform: scale(1.05); border-color: var(--primary) !important; }
+        #lang-box { position: absolute; top: 15px; right: 15px; z-index: 1000; }
+        .l-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--primary); color: white; padding: 5px 12px; cursor: pointer; border-radius: 5px; }
 
-        /* Menü */
-        #menu { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 500; }
-        .m-box { background: #16161d; padding: 40px; border-radius: 25px; border: 2px solid var(--primary); text-align: center; width: 300px; box-shadow: 0 0 40px rgba(0,255,204,0.2); }
-        #start-btn { padding: 15px 50px; font-size: 22px; background: var(--primary); border: none; border-radius: 50px; color: #000; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        #overlay { 
+            position: absolute; inset: 0; background: rgba(0,0,0,0.85); 
+            display: flex; flex-direction: column; justify-content: center; 
+            align-items: center; z-index: 500; 
+        }
         
-        #ad-box { margin-top: 20px; display: none; min-height: 100px; }
+        .menu-box { 
+            background: #111; padding: 40px; border-radius: 30px; 
+            border: 2px solid var(--primary); text-align: center; width: 280px;
+            box-shadow: 0 0 50px rgba(0,255,204,0.1);
+        }
+
+        h1 { color: var(--primary); font-size: 24px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        #start-btn { 
+            padding: 15px 40px; font-size: 20px; background: var(--primary); 
+            border: none; border-radius: 50px; color: #000; font-weight: bold; 
+            cursor: pointer; margin-top: 20px; transition: 0.2s;
+        }
+
+        #ad-box { margin-top: 20px; display: none; border-top: 1px solid #222; padding-top: 15px; }
     </style>
 </head>
-<body onpointerdown="checkClick(event)">
+<body onpointerdown="shiftGravity(event)">
 
     <div id="lang-box">
         <button class="l-btn" onclick="event.stopPropagation(); setLang('tr')">TR</button>
         <button class="l-btn" onclick="event.stopPropagation(); setLang('en')">EN</button>
     </div>
 
-    <div id="game-zone">
-        <div id="score-display">0</div>
-        <div id="bar-container">
-            <div id="target-zone"></div>
-            <div id="pointer"></div>
+    <div id="ui"><div id="score">0</div></div>
+
+    <div id="overlay">
+        <div class="menu-box">
+            <h1 id="t-title">GRAVITY SHIFT</h1>
+            <p id="t-desc">Yerçekimini değiştir, hayatta kal!</p>
+            <p id="t-final" style="display:none; font-size: 20px; color: var(--primary); font-weight: bold; margin: 10px 0;"></p>
+            <button id="start-btn" onclick="event.stopPropagation(); startGame()">BAŞLA</button>
+            <div id="ad-box">
+                <iframe id="ad-frame" src="" width="300" height="100" frameborder="0" scrolling="no"></iframe>
+            </div>
         </div>
     </div>
 
-    <div id="menu">
-        <div class="m-box">
-            <h1 id="t-title">CLICK DASH</h1>
-            <p id="t-desc">Tam ortada yakala!</p>
-            <p id="t-final" style="display:none; font-size: 24px; color: var(--primary); font-weight: bold;"></p>
-            <button id="start-btn" onclick="event.stopPropagation(); startGame()">BA
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const adFrame = document.getElementById('ad-frame');
+    const adBox = document.getElementById('ad-box');
+    
+    let score = 0, gameActive = false, lang = 'tr';
+    let player = { x: 50, y: 0, w: 30, h: 30, dy: 0, gravity: 0.6 };
+    let obstacles = [];
+    let speed = 5;
+
+    const texts = {
+        tr: { title: "GRAVITY SHIFT", desc: "Dokunarak yerçekimini değiştir!", btn: "BAŞLA", final: "Skor: " },
+        en: { title: "GRAVITY SHIFT", desc: "Tap to shift gravity!", btn: "START", final: "Score: " }
+    };
+
+    function setLang(l) {
+        lang = l;
+        document.getElementById('t-title').innerText = texts[l].title;
+        document.getElementById('t-desc').innerText = texts[l].desc;
+        document.getElementById('start-btn').innerText = texts[l].btn;
+    }
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        player.y = canvas.height / 2;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function startGame() {
+        score = 0;
+        speed = 5;
+        obstacles = [];
+        player.y = canvas.height / 2;
+        player.dy = 0;
+        player.gravity = 0.6;
+        gameActive = true;
+        document.getElementById('score').innerText = "0";
+        document.getElementById('overlay').style.display = 'none';
+        adBox.style.display = 'none';
+        adFrame.src = "";
+        requestAnimationFrame(update);
+    }
+
+    function shiftGravity(e) {
+        if(!gameActive) return;
+        player.gravity *= -1; // Yerçekimini tersine çevir
+    }
+
+    function spawnObstacle() {
+        if(!gameActive) return;
+        let h = 100 + Math.random() * 150;
+        let isTop = Math.random() >
