@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON GHOST: GLOBAL EDITION V2.0</title>
+    <title>Neon Ghost: World Tour</title>
     <style>
         :root { --neon: #ff00ff; --cyan: #00ffff; --bg: #050505; }
         body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; color: white; }
         canvas { display: block; }
 
+        /* UI */
         #ui { position: absolute; top: 20px; width: 100%; text-align: center; pointer-events: none; z-index: 10; }
         #score { font-size: 60px; font-weight: 900; color: #fff; text-shadow: 0 0 15px var(--neon); }
 
         #overlay { 
-            position: absolute; inset: 0; background: rgba(0,0,0,0.92); 
+            position: absolute; inset: 0; background: rgba(0,0,0,0.95); 
             display: flex; flex-direction: column; justify-content: center; 
             align-items: center; z-index: 100; padding: 20px;
         }
         
         .menu-box { 
-            background: #111; padding: 20px; border-radius: 20px; 
-            border: 2px solid var(--neon); text-align: center; width: 340px;
-            box-shadow: 0 0 40px rgba(255,0,255,0.2);
+            background: #111; padding: 25px; border-radius: 20px; 
+            border: 2px solid var(--neon); text-align: center; width: 320px;
         }
 
         input { 
@@ -30,28 +30,27 @@
         }
 
         /* Skin Selection */
-        .skin-container { display: flex; justify-content: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-        .skin { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        .skin.active { border-color: var(--cyan); transform: scale(1.1); box-shadow: 0 0 10px var(--cyan); }
+        .skin-label { font-size: 12px; color: var(--cyan); margin-bottom: 5px; text-transform: uppercase; }
+        .skin-container { display: flex; justify-content: center; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+        .skin { 
+            width: 40px; height: 40px; border-radius: 50%; cursor: pointer; 
+            border: 2px solid #333; display: flex; align-items: center; 
+            justify-content: center; font-size: 22px; transition: 0.2s;
+            background: #1a1a1a;
+        }
+        .skin.active { border-color: var(--neon); transform: scale(1.1); box-shadow: 0 0 15px var(--neon); }
 
         .btn { 
-            padding: 12px; font-size: 16px; border: none; border-radius: 8px; 
-            font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 8px;
-            text-transform: uppercase;
+            padding: 15px; font-size: 18px; border: none; border-radius: 10px; 
+            font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px;
         }
+        #start-btn { background: var(--neon); color: white; }
+        #revive-btn { background: #ffcc00; color: black; display: none; }
+
+        .leaderboard { margin: 15px 0; background: #000; padding: 10px; border-radius: 10px; font-size: 12px; border: 1px solid #222; }
+        .lb-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #111; }
         
-        #start-btn { background: var(--neon); color: #fff; }
-        #revive-btn { background: #ffcc00; color: #000; display: none; }
-        #share-btn { background: #25D366; color: #fff; display: none; }
-
-        .leaderboard { 
-            margin: 10px 0; background: #000; padding: 10px; border-radius: 10px; 
-            font-size: 12px; text-align: left; border: 1px solid #333; max-height: 120px; overflow-y: auto;
-        }
-        .lb-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #222; }
-        .lb-row.me { color: var(--cyan); }
-
-        #ad-box { margin-top: 10px; height: 100px; background: #000; border: 1px dashed #444; }
+        #ad-box { margin-top: 15px; border: 1px dashed #444; height: 100px; }
     </style>
 </head>
 <body onpointerdown="teleport()">
@@ -60,27 +59,26 @@
 
     <div id="overlay">
         <div class="menu-box">
-            <h2 style="margin:0; color:var(--cyan); font-style: italic;">NEON GHOST</h2>
+            <h2 style="margin:0; color:var(--cyan)">NEON GHOST</h2>
             
-            <input type="text" id="nickname" placeholder="Enter Nickname..." maxlength="12">
+            <input type="text" id="nickname" placeholder="Your Nickname" maxlength="12">
 
+            <div class="skin-label">Select Character</div>
             <div class="skin-container" id="skin-picker">
-                <div class="skin active" data-type="color" data-val="#00ffff" style="background:#00ffff"></div>
-                <div class="skin" data-type="color" data-val="#ff0000" style="background:#ff0000"></div>
-                <div class="skin" data-type="emoji" data-val="🇹🇷">🇹🇷</div>
-                <div class="skin" data-type="emoji" data-val="🇺🇸">🇺🇸</div>
-                <div class="skin" data-type="emoji" data-val="🇩🇪">🇩🇪</div>
-                <div class="skin" data-type="emoji" data-val="⚽">⚽</div>
+                <div class="skin active" data-val="👻">👻</div>
+                <div class="skin" data-val="🇹🇷">🇹🇷</div>
+                <div class="skin" data-val="🇺🇸">🇺🇸</div>
+                <div class="skin" data-val="🇩🇪">🇩🇪</div>
+                <div class="skin" data-val="⚽">⚽</div>
+                <div class="skin" data-val="👽">👽</div>
             </div>
 
             <div id="leaderboard" class="leaderboard">
-                <div style="text-align:center; color:var(--neon); font-weight:bold; margin-bottom:5px;">GLOBAL RANKING</div>
                 <div id="lb-content"></div>
             </div>
 
-            <button id="revive-btn" class="btn" onclick="event.stopPropagation(); watchAd()">WATCH AD & CONTINUE</button>
+            <button id="revive-btn" class="btn" onclick="event.stopPropagation(); watchAd()">CONTINUE (WATCH AD)</button>
             <button id="start-btn" class="btn" onclick="event.stopPropagation(); startGame()">START GAME</button>
-            <button id="share-btn" class="btn" onclick="event.stopPropagation(); shareScore()">SHARE SCORE</button>
 
             <div id="ad-box">
                 <iframe id="ad-frame" width="300" height="100" frameborder="0" scrolling="no"></iframe>
@@ -98,15 +96,14 @@
     
     let score = 0, gameActive = false, nickname = "", canRevive = true;
     let playerRadius = 130, targetRadius = 130, angle = 0, obstacles = [], gameSpeed = 1;
-    let selectedSkin = { type: 'color', val: '#00ffff' };
+    let selectedSkin = "👻";
 
-    // Skin selection logic
     document.querySelectorAll('.skin').forEach(s => {
         s.addEventListener('click', (e) => {
             e.stopPropagation();
             document.querySelectorAll('.skin').forEach(sk => sk.classList.remove('active'));
             s.classList.add('active');
-            selectedSkin = { type: s.dataset.type, val: s.dataset.val };
+            selectedSkin = s.dataset.val;
         });
     });
 
@@ -118,65 +115,49 @@
     resize();
 
     function startGame() {
-        nickname = document.getElementById('nickname').value || "Guest";
-        score = 0; gameSpeed = 1; obstacles = []; gameActive = true; canRevive = true;
+        nickname = document.getElementById('nickname').value || "Player";
+        score = 0; gameSpeed = 0.8; obstacles = []; gameActive = true; canRevive = true;
         document.getElementById('score').innerText = "0";
         document.getElementById('overlay').style.display = 'none';
-        document.getElementById('revive-btn').style.display = 'none';
         adFrame.src = "about:blank";
         requestAnimationFrame(update);
         spawnObstacle();
     }
 
     function watchAd() {
-        // Simüle edilmiş reklam izleme
-        alert("Ad playing... (Redirecting to ad link)");
         window.open(adLink, '_blank');
-        
-        // Öldüğü yerden devam et
         canRevive = false;
         gameActive = true;
-        obstacles = []; // Mevcut engelleri temizle ki hemen yanmasın
+        obstacles = [];
         document.getElementById('overlay').style.display = 'none';
         requestAnimationFrame(update);
-        spawnObstacle();
     }
 
     function teleport() { if(gameActive) targetRadius = (targetRadius === 130) ? 75 : 130; }
 
     function spawnObstacle() {
         if(!gameActive) return;
+        // Daha kolay: Engel aralığı 1.5 saniyeden başlıyor
+        let delay = Math.max(700, 1800 - (score * 30));
         obstacles.push({
             angle: 0, orbit: Math.random() > 0.5 ? 75 : 130,
-            speed: (0.02 + Math.random() * 0.01) * gameSpeed, size: 25
+            speed: (0.015 + Math.random() * 0.01) * gameSpeed, size: 22
         });
-        setTimeout(spawnObstacle, Math.max(500, 1400 - (score * 40)));
+        setTimeout(spawnObstacle, delay);
     }
 
     function gameOver() {
         gameActive = false;
         document.getElementById('overlay').style.display = 'flex';
-        document.getElementById('start-btn').innerText = "TRY AGAIN";
-        document.getElementById('share-btn').style.display = 'block';
-        if(canRevive) document.getElementById('revive-btn').style.display = 'block';
-        else document.getElementById('revive-btn').style.display = 'none';
-        
+        document.getElementById('revive-btn').style.display = canRevive ? 'block' : 'none';
         updateLeaderboard();
         adFrame.src = adLink;
     }
 
     function updateLeaderboard() {
         const lb = document.getElementById('lb-content');
-        let data = [
-            {n: "Vortex", s: 52}, {n: "Ghost", s: 41}, {n: nickname, s: score, me: true},
-            {n: "Cyber", s: 35}, {n: "Neon", s: 28}
-        ].sort((a,b) => b.s - a.s);
-        lb.innerHTML = data.map((e, i) => `<div class="lb-row ${e.me?'me':''}"><span>${i+1}. ${e.n}</span><span>${e.s}</span></div>`).join('');
-    }
-
-    function shareScore() {
-        const text = `I scored ${score} in Neon Ghost! Can you beat me? 🔥\nPlay here: ${window.location.href}`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        let data = [{n:"Ghost",s:50},{n:nickname,s:score,me:true},{n:"Player1",s:20}].sort((a,b)=>b.s-a.s);
+        lb.innerHTML = data.map(e=>`<div class="lb-row ${e.me?'me':''}"><span>${e.n}</span><span>${e.s}</span></div>`).join('');
     }
 
     function update() {
@@ -185,36 +166,14 @@
         ctx.fillRect(0,0,canvas.width, canvas.height);
 
         const cx = canvas.width / 2, cy = canvas.height / 2;
-        playerRadius += (targetRadius - playerRadius) * 0.15;
-        angle += 0.025 * gameSpeed;
+        playerRadius += (targetRadius - playerRadius) * 0.2; // Daha hızlı ışınlanma
+        angle += 0.02 * gameSpeed;
         
         let px = cx + Math.cos(angle) * playerRadius;
         let py = cy + Math.sin(angle) * playerRadius;
 
-        // Draw Player Skin
-        if(selectedSkin.type === 'color') {
-            ctx.fillStyle = selectedSkin.val; ctx.shadowBlur = 20; ctx.shadowColor = selectedSkin.val;
-            ctx.beginPath(); ctx.arc(px, py, 12, 0, Math.PI*2); ctx.fill();
-        } else {
-            ctx.font = "24px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            ctx.fillText(selectedSkin.val, px, py);
-        }
-        ctx.shadowBlur = 0;
-
-        for(let i = obstacles.length - 1; i >= 0; i--) {
-            let o = obstacles[i]; o.angle += o.speed;
-            let ox = cx + Math.cos(o.angle) * o.orbit;
-            let oy = cy + Math.sin(o.angle) * o.orbit;
-
-            ctx.fillStyle = "#ff00ff";
-            ctx.beginPath(); ctx.arc(ox, oy, 12, 0, Math.PI*2); ctx.fill();
-
-            if(Math.hypot(px - ox, py - oy) < 25) { gameOver(); return; }
-            if(o.angle > Math.PI * 2) { score++; gameSpeed += 0.01; document.getElementById('score').innerText = score; obstacles.splice(i, 1); }
-        }
-        requestAnimationFrame(update);
-    }
-    updateLeaderboard();
-</script>
-</body>
-</html>
+        // Player with Character
+        ctx.shadowBlur = 15; ctx.shadowColor = varColor();
+        ctx.fillStyle = "#fff";
+        ctx.font = "24px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(selectedSkin, px
