@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="monetag" content="db0c9b9c7338da8bcd58a86eed7c7afa">
+    <title>Spot The Real</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+        body { background-color: #020617; margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; }
+        #root { width: 100%; height: 100%; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+        const App = () => {
+            const [level, setLevel] = useState(1);
+            const [dots, setDots] = useState([]);
+            const [targetIndex, setTargetIndex] = useState(null);
+            const [gameState, setGameState] = useState('START'); 
+            const [shake, setShake] = useState(false);
+
+            const triggerAd = () => {
+                window.open('https://omg10.com/4/10619187', '_blank'); 
+                setGameState('START');
+            };
+
+            const getDifficulty = (lvl) => {
+                const count = Math.min(9 + Math.floor(lvl / 3) * 3, 36);
+                const showDuration = Math.max(1200 - lvl * 100, 300);
+                const colorDiff = Math.max(15 - Math.floor(lvl / 2), 1);
+                return { count, showDuration, colorDiff };
+            };
+
+            const initLevel = useCallback(() => {
+                const { count } = getDifficulty(level);
+                const newDots = Array(count).fill('#3B82F6');
+                const randomIndex = Math.floor(Math.random() * count);
+                setTargetIndex(randomIndex);
+                setDots(newDots);
+                setGameState('MEMORIZE');
+                setTimeout(() => setGameState('PLAY'), getDifficulty(level).showDuration);
+            }, [level]);
+
+            const handleDotClick = (index) => {
+                if (gameState !== 'PLAY') return;
+                if (index === targetIndex) { setLevel(prev => prev + 1); setGameState('START'); }
+                else { setShake(true); setTimeout(() => setShake(false), 400); setGameState('GAMEOVER'); }
+            };
+
+            useEffect(() => { if (gameState === 'START') initLevel(); }, [gameState, initLevel]);
+
+            return (
+                <div className={`h-full w-full flex flex-col items-center justify-between py-12 px-4 ${shake ? 'animate-shake' : ''}`}>
+                    <div className="text-center">
+                        <h1 className="text-3xl font-black italic text-blue-500 tracking-tighter">SPOT THE REAL</h1>
+                        <p className="text-xs text-blue-400 font-bold uppercase mt-2">LEVEL {level}</p>
+                    </div>
+                    <div className="grid gap-3 p-4 bg-slate-900/40 rounded-3xl border border-white/5 shadow-2xl" style={{ gridTemplateColumns: `repeat(${Math.sqrt(dots.length)}, 1fr)`, width: '100%', maxWidth: '400px' }}>
+                        {dots.map((_, i) => (
+                            <div key={i} onClick={() => handleDotClick(i)} className="aspect-square rounded-full transition-all active:scale-75 shadow-inner" style={{ backgroundColor: (gameState === 'MEMORIZE' && i === targetIndex) ? `hsl(217, 91%, ${50 + getDifficulty(level).colorDiff}%)` : '#1e293b', border: (gameState === 'MEMORIZE' && i === targetIndex) ? '3px solid #60A5FA' : '2px solid transparent' }} />
+                        ))}
+                    </div>
+                    <div className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">GERCEK OLANI BUL</div>
+                    {gameState === 'GAMEOVER' && (
+                        <div className="fixed inset-0 bg-slate-950/98 backdrop-blur-xl flex items-center justify-center z-50 p-8 text-center">
+                            <div className="w-full">
+                                <h2 className="text-6xl font-black text-white mb-2 italic">FAIL!</h2>
+                                <p className="text-slate-400 mb-10 text-sm tracking-widest uppercase">Sadece %{Math.max(100 - (level+2) * 4, 1)} gecebildi.</p>
+                                <button onClick={triggerAd} className="w-full bg-blue-600 text-white font-black py-6 rounded-2xl text-xl mb-4 shadow-lg active:scale-95 transition-transform uppercase italic">REKLAM IZLE & DEVAM ET</button>
+                                <button onClick={() => { setLevel(1); setGameState('START'); }} className="block mx-auto text-slate-500 font-bold text-[10px] mt-4 uppercase underline">BASTAN BASLA</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
