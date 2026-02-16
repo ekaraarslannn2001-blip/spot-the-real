@@ -10,8 +10,9 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Mobil optimizasyonları */
         * { -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
-        body { background-color: #020617; margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw; }
+        body { background-color: #020617; margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw; font-family: sans-serif; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
         .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
     </style>
@@ -29,10 +30,9 @@
             const [gameState, setGameState] = useState('START'); 
             const [shake, setShake] = useState(false);
 
+            // REKLAM TETİKLEYİCİ - SENİN LİNKİNLE BAĞLANDI
             const triggerAd = () => {
-                // PARA KAZANDIRAN REKLAM LINKI
-                // Monetag panelinden "Direct Link" alinca bu adresi onunla degistir kanka
-                window.open('https://www.google.com', '_blank'); 
+                window.open('https://omg10.com/4/10619187', '_blank'); 
                 setGameState('START');
             };
 
@@ -50,3 +50,4 @@
                 setTargetIndex(randomIndex);
                 setDots(newDots);
                 setGameState('MEMORIZE');
+                setTimeout
