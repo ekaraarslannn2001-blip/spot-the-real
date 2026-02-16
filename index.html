@@ -5,31 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Spot the Real</title>
     <style>
-        :root { --primary: #00ffcc; --bg: #0f0f12; }
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; touch-action: none; color: white; }
-        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
+        :root { --primary: #00ffcc; --bg: #0b0b0e; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; color: white; }
         
-        #ui { position: absolute; top: 30px; width: 100%; text-align: center; pointer-events: none; z-index: 5; }
-        #score { font-size: 60px; font-weight: 900; color: var(--primary); text-shadow: 0 0 15px rgba(0,255,204,0.5); }
-        
-        #lang-select { position: absolute; top: 15px; right: 15px; z-index: 20; }
-        .lang-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--primary); color: white; padding: 8px 12px; cursor: pointer; border-radius: 5px; margin-left: 5px; }
+        /* Oyun Alanı */
+        canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
 
+        /* UI Elemanları */
+        #ui { position: absolute; top: 20px; width: 100%; text-align: center; pointer-events: none; z-index: 10; }
+        #score { font-size: 80px; font-weight: 900; color: rgba(0, 255, 204, 0.3); }
+
+        #lang-select { position: absolute; top: 15px; right: 15px; z-index: 100; }
+        .lang-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--primary); color: white; padding: 5px 12px; cursor: pointer; border-radius: 5px; font-size: 12px; }
+
+        /* Ana Menü ve Overlay */
         #overlay { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.85); display: flex; flex-direction: column; 
-            justify-content: center; align-items: center; z-index: 100;
+            background: rgba(0,0,0,0.9); display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 50;
         }
         
-        .menu-box { background: #1a1a20; padding: 30px; border-radius: 20px; border: 2px solid var(--primary); text-align: center; width: 85%; max-width: 400px; }
-        button#start-btn { 
-            padding: 15px 50px; font-size: 22px; cursor: pointer; 
+        .menu-box { 
+            background: #16161d; padding: 40px; border-radius: 25px; 
+            border: 2px solid var(--primary); text-align: center; 
+            box-shadow: 0 0 50px rgba(0,255,204,0.15); width: 80%; max-width: 350px;
+        }
+
+        #start-btn { 
+            padding: 18px 60px; font-size: 24px; cursor: pointer; 
             background: var(--primary); border: none; border-radius: 50px; 
-            font-weight: bold; margin-top: 20px; transition: 0.2s;
+            font-weight: bold; color: #000; margin-top: 25px;
+            box-shadow: 0 5px 15px rgba(0,255,204,0.4); pointer-events: auto;
         }
-        button#start-btn:hover { transform: scale(1.05); }
-        
-        .ad-container { margin-top: 20px; min-height: 100px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+
+        /* Reklam Alanı Alt Kısma Sabitlendi */
+        .ad-box { margin-top: 30px; border-top: 1px solid #333; padding-top: 20px; min-height: 100px; }
     </style>
 </head>
 <body>
@@ -39,19 +49,17 @@
         <button class="lang-btn" onclick="setLanguage('en')">EN</button>
     </div>
 
-    <div id="ui">
-        <div id="score">0</div>
-    </div>
+    <div id="ui"><div id="score">0</div></div>
 
     <div id="overlay">
         <div class="menu-box">
             <h1 id="m-title">SPOT THE REAL</h1>
             <p id="m-desc">Parlayan gerçek halkayı bul!</p>
-            <p id="m-final" style="display:none; font-size: 20px; color: var(--primary);"></p>
+            <p id="m-final" style="display:none; font-size: 24px; margin: 10px 0; color: var(--primary); font-weight: bold;"></p>
             
             <button id="start-btn" onclick="startGame()">BAŞLA</button>
             
-            <div class="ad-container">
+            <div class="ad-box">
                 <iframe id="ad-frame" src="https://omg10.com/4/10619187" width="300" height="100" frameborder="0" scrolling="no"></iframe>
             </div>
         </div>
@@ -65,14 +73,12 @@
     
     const texts = {
         tr: { title: "SPOT THE REAL", desc: "Zaman dolmadan parlayana tıkla!", final: "Skorun: ", btn: "BAŞLA" },
-        en: { title: "SPOT THE REAL", desc: "Click the glowing one before time's up!", final: "Score: ", btn: "START" }
+        en: { title: "SPOT THE REAL", desc: "Click the glowing one fast!", final: "Score: ", btn: "START" }
     };
     let currentLang = 'tr';
-
     let score = 0;
     let gameActive = false;
     let targets = [];
-    const adLink = "https://omg10.com/4/10619187";
 
     function setLanguage(lang) {
         currentLang = lang;
@@ -84,30 +90,9 @@
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        if(gameActive) spawn();
     }
     window.addEventListener('resize', resize);
     resize();
 
-    class Circle {
-        constructor(isReal) {
-            this.isReal = isReal;
-            this.size = 25 + Math.random() * 20;
-            // Ekrana sığacak şekilde rastgele pozisyon
-            this.x = Math.random() * (canvas.width - 100) + 50;
-            this.y = Math.random() * (canvas.height - 200) + 100;
-            this.color = isReal ? '#00ffcc' : '#222';
-            this.life = 1.0;
-            this.decay = 0.006 + (score * 0.0008); 
-        }
-        draw() {
-            ctx.globalAlpha = this.life;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = this.color;
-            if(this.isReal) {
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = '#00ffcc';
-            }
-            ctx.fill();
-            ctx.shadowBlur =
+    class Target {
+        constructor
