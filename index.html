@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="monetag" content="db0c9b9c7338da8bcd58a86eed7c7afa">
     <title>Spot The Real - Viral Challenge</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Mobil cihazlarda seçmeyi ve sağ tıkı engelle (Oyun hissi için) */
         * { -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
         body { background-color: #020617; margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
@@ -29,6 +29,13 @@
             const [gameState, setGameState] = useState('START'); 
             const [shake, setShake] = useState(false);
 
+            const triggerAd = () => {
+                // PARA KAZANDIRAN REKLAM LINKI
+                // Monetag panelinden "Direct Link" alinca bu adresi onunla degistir kanka
+                window.open('https://www.google.com', '_blank'); 
+                setGameState('START');
+            };
+
             const getDifficulty = (lvl) => {
                 const count = Math.min(9 + Math.floor(lvl / 3) * 3, 36);
                 const showDuration = Math.max(1200 - lvl * 100, 300);
@@ -40,4 +47,6 @@
                 const { count } = getDifficulty(level);
                 const newDots = Array(count).fill('#3B82F6');
                 const randomIndex = Math.floor(Math.random() * count);
-                setTargetIndex(randomIndexs
+                setTargetIndex(randomIndex);
+                setDots(newDots);
+                setGameState('MEMORIZE');
