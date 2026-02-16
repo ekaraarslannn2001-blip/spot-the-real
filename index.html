@@ -3,102 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spot the Real</title>
+    <title>Click Dash</title>
     <style>
-        :root { --primary: #00ffcc; --bg: #0b0b0e; }
-        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; color: white; }
+        :root { --primary: #ff3e3e; --bg: #000; }
+        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; color: white; display: flex; flex-direction: column; height: 100vh; justify-content: center; align-items: center; }
         
-        canvas { display: block; width: 100vw; height: 100vh; }
+        #lang-box { position: absolute; top: 15px; right: 15px; z-index: 1000; }
+        .l-btn { background: #222; border: 1px solid white; color: white; padding: 5px 10px; cursor: pointer; border-radius: 5px; }
 
-        /* Dil Butonları - En Üstte ve Tıklanabilir */
-        #lang-select { position: absolute; top: 20px; right: 20px; z-index: 1000; }
-        .lang-btn { background: #222; border: 1px solid var(--primary); color: white; padding: 10px 15px; cursor: pointer; border-radius: 8px; font-weight: bold; margin-left: 5px; }
-        .lang-btn:active { background: var(--primary); color: black; }
-
-        #ui { position: absolute; top: 30px; width: 100%; text-align: center; pointer-events: none; z-index: 10; }
-        #score { font-size: 70px; font-weight: 900; color: rgba(0, 255, 204, 0.2); }
-
-        /* Giriş ve Oyun Sonu Ekranı */
-        #overlay { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); display: flex; flex-direction: column; 
-            justify-content: center; align-items: center; z-index: 500;
-        }
+        #game-zone { width: 300px; text-align: center; }
+        #score-display { font-size: 60px; font-weight: bold; margin-bottom: 20px; }
         
-        .menu-box { 
-            background: #16161d; padding: 30px; border-radius: 20px; 
-            border: 2px solid var(--primary); text-align: center; width: 85%; max-width: 350px;
-        }
+        /* Bar Mekaniği */
+        #bar-container { width: 100%; height: 40px; background: #333; border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #555; }
+        #target-zone { position: absolute; width: 40px; height: 100%; background: #00ffcc; left: 50%; transform: translateX(-50%); box-shadow: 0 0 15px #00ffcc; }
+        #pointer { position: absolute; width: 6px; height: 100%; background: white; left: 0; transition: none; }
 
-        h1 { color: var(--primary); margin: 0 0 10px 0; font-size: 28px; }
+        #msg { margin-top: 20px; font-size: 18px; color: #aaa; }
 
-        #start-btn { 
-            padding: 18px 50px; font-size: 22px; cursor: pointer; 
-            background: var(--primary); border: none; border-radius: 50px; 
-            font-weight: bold; color: #000; margin-top: 20px;
-            box-shadow: 0 5px 15px rgba(0,255,204,0.3);
-        }
-
-        /* Reklam Alanı (Başlangıçta Gizli) */
-        #ad-container { margin-top: 20px; display: none; border-top: 1px solid #333; padding-top: 15px; }
+        /* Menü */
+        #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 500; }
+        .m-box { background: #111; padding: 30px; border-radius: 20px; border: 2px solid var(--primary); text-align: center; width: 280px; }
+        #start-btn { padding: 15px 40px; font-size: 20px; background: var(--primary); border: none; border-radius: 30px; color: white; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        
+        /* Reklam Alanı */
+        #ad-box { margin-top: 20px; display: none; }
     </style>
 </head>
-<body>
+<body onclick="checkClick()">
 
-    <div id="lang-select">
-        <button class="lang-btn" onclick="setLanguage('tr')">TR</button>
-        <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+    <div id="lang-box">
+        <button class="l-btn" onclick="setLang('tr')">TR</button>
+        <button class="l-btn" onclick="setLang('en')">EN</button>
     </div>
 
-    <div id="ui"><div id="score">0</div></div>
+    <div id="game-zone">
+        <div id="score-display">0</div>
+        <div id="bar-container">
+            <div id="target-zone"></div>
+            <div id="pointer"></div>
+        </div>
+        <div id="msg">TAM ORTADA TIKLA!</div>
+    </div>
 
-    <div id="overlay">
-        <div class="menu-box">
-            <h1 id="m-title">SPOT THE REAL</h1>
-            <p id="m-desc">Parlayan halkayı bul!</p>
-            <p id="m-final" style="display:none; font-size: 22px; color: var(--primary); font-weight: bold;"></p>
-            
-            <button id="start-btn" onclick="startGame()">BAŞLA</button>
-            
-            <div id="ad-container" id="ad-box">
+    <div id="menu">
+        <div class="m-box">
+            <h1 id="t-title">CLICK DASH</h1>
+            <p id="t-desc">Çizgi yeşil alandayken ekrana dokun!</p>
+            <p id="t-final" style="display:none"></p>
+            <button id="start-btn" onclick="event.stopPropagation(); startGame()">BAŞLA</button>
+            <div id="ad-box">
                 <iframe id="ad-frame" src="" width="300" height="100" frameborder="0" scrolling="no"></iframe>
             </div>
         </div>
     </div>
 
-    <canvas id="gameCanvas"></canvas>
-
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    let score = 0, pos = 0, dir = 1, speed = 2, gameActive = false, lang = 'tr';
+    const pointer = document.getElementById('pointer');
     const adFrame = document.getElementById('ad-frame');
-    const adContainer = document.getElementById('ad-container');
-    const adURL = "https://omg10.com/4/10619187";
-
+    const adBox = document.getElementById('ad-box');
     const texts = {
-        tr: { title: "SPOT THE REAL", desc: "Zaman dolmadan parlayana tıkla!", final: "Skorun: ", btn: "BAŞLA" },
-        en: { title: "SPOT THE REAL", desc: "Click the glowing one fast!", final: "Final Score: ", btn: "START" }
+        tr: { title: "CLICK DASH", desc: "Çizgi yeşildeyken dokun!", btn: "BAŞLA", final: "Skorun: ", msg: "TIKLA!" },
+        en: { title: "CLICK DASH", desc: "Tap when line is on green!", btn: "START", final: "Score: ", msg: "TAP!" }
     };
-    let currentLang = 'tr';
-    let score = 0, gameActive = false, targets = [];
 
-    function setLanguage(lang) {
-        currentLang = lang;
-        document.getElementById('m-title').innerText = texts[lang].title;
-        document.getElementById('m-desc').innerText = texts[lang].desc;
-        document.getElementById('start-btn').innerText = texts[lang].btn;
-        if(!gameActive && score > 0) {
-            document.getElementById('m-final').innerText = texts[lang].final + score;
+    function setLang(l) {
+        lang = l;
+        document.getElementById('t-title').innerText = texts[l].title;
+        document.getElementById('t-desc').innerText = texts[l].desc;
+        document.getElementById('start-btn').innerText = texts[l].btn;
+        document.getElementById('msg').innerText = texts[l].msg;
+    }
+
+    function startGame() {
+        score = 0;
+        speed = 2;
+        gameActive = true;
+        document.getElementById('score-display').innerText = score;
+        document.getElementById('menu').style.display = 'none';
+        adBox.style.display = 'none';
+        adFrame.src = "";
+        requestAnimationFrame(update);
+    }
+
+    function update() {
+        if(!gameActive) return;
+        pos += speed * dir;
+        if(pos >= 294 || pos <= 0) dir *= -1;
+        pointer.style.left = pos + 'px';
+        requestAnimationFrame(update);
+    }
+
+    function checkClick() {
+        if(!gameActive) return;
+        // Yeşil alan 130px ile 170px arası (300px barın ortası)
+        if(pos >= 130 && pos <= 170) {
+            score++;
+            speed += 0.3; // Her başarılı tıklamada hızlanır
+            document.getElementById('score-display').innerText = score;
+            // Küçük bir görsel efekt
+            document.getElementById('bar-container').style.borderColor = '#00ffcc';
+            setTimeout(() => document.getElementById('bar-container').style.borderColor = '#555', 100);
+        } else {
+            gameOver();
         }
     }
 
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+    function gameOver() {
+        gameActive = false;
+        document.getElementById('menu').style.display = 'flex';
+        document.getElementById('t-final').style.display = 'block';
+        document.getElementById('t-final').innerText = texts[lang].final + score;
+        adBox.style.display = 'block';
+        adFrame.src = "https://omg10.com/4/10619187";
     }
-    window.addEventListener('resize', resize);
-    resize();
-
-    class Target {
-        constructor(isReal) {
-            this.isReal = is
+</script>
+</body>
+</html>
