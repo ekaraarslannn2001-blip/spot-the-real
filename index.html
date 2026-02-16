@@ -3,58 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gravity Shift</title>
+    <title>Gravity Shift Pro</title>
     <style>
         :root { --primary: #00ffcc; --bg: #050505; }
-        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; }
-        canvas { display: block; }
+        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; touch-action: none; user-select: none; color: white; }
+        canvas { display: block; z-index: 1; position: absolute; top: 0; left: 0; }
 
-        /* UI Katmanları */
-        #ui { position: absolute; top: 20px; width: 100%; text-align: center; pointer-events: none; z-index: 10; }
-        #score { font-size: 60px; font-weight: 900; color: rgba(0, 255, 204, 0.2); }
-
-        #lang-box { position: absolute; top: 15px; right: 15px; z-index: 1000; }
-        .l-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--primary); color: white; padding: 5px 12px; cursor: pointer; border-radius: 5px; }
+        /* Arayüz */
+        #ui { position: absolute; top: 20px; width: 100%; text-align: center; z-index: 10; pointer-events: none; }
+        #score { font-size: 60px; font-weight: bold; opacity: 0.3; }
 
         #overlay { 
-            position: absolute; inset: 0; background: rgba(0,0,0,0.85); 
+            position: absolute; inset: 0; background: rgba(0,0,0,0.9); 
             display: flex; flex-direction: column; justify-content: center; 
-            align-items: center; z-index: 500; 
+            align-items: center; z-index: 100; 
         }
         
         .menu-box { 
-            background: #111; padding: 40px; border-radius: 30px; 
-            border: 2px solid var(--primary); text-align: center; width: 280px;
-            box-shadow: 0 0 50px rgba(0,255,204,0.1);
+            background: #111; padding: 30px; border-radius: 20px; 
+            border: 2px solid var(--primary); text-align: center; width: 300px;
         }
 
-        h1 { color: var(--primary); font-size: 24px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
         #start-btn { 
-            padding: 15px 40px; font-size: 20px; background: var(--primary); 
+            padding: 15px 50px; font-size: 22px; background: var(--primary); 
             border: none; border-radius: 50px; color: #000; font-weight: bold; 
-            cursor: pointer; margin-top: 20px; transition: 0.2s;
+            cursor: pointer; margin-top: 20px; z-index: 110;
         }
 
-        #ad-box { margin-top: 20px; display: none; border-top: 1px solid #222; padding-top: 15px; }
+        /* Reklam Alanı - Görünmeme Sorununa Karşı Güçlendirildi */
+        #ad-box { 
+            margin-top: 20px; width: 300px; height: 120px; 
+            background: #222; overflow: hidden; display: none;
+            border: 1px dashed var(--primary);
+        }
     </style>
 </head>
-<body onpointerdown="shiftGravity(event)">
-
-    <div id="lang-box">
-        <button class="l-btn" onclick="event.stopPropagation(); setLang('tr')">TR</button>
-        <button class="l-btn" onclick="event.stopPropagation(); setLang('en')">EN</button>
-    </div>
+<body onpointerdown="triggerGravity()">
 
     <div id="ui"><div id="score">0</div></div>
 
     <div id="overlay">
         <div class="menu-box">
-            <h1 id="t-title">GRAVITY SHIFT</h1>
-            <p id="t-desc">Yerçekimini değiştir, hayatta kal!</p>
-            <p id="t-final" style="display:none; font-size: 20px; color: var(--primary); font-weight: bold; margin: 10px 0;"></p>
+            <h1 id="title">GRAVITY SHIFT</h1>
+            <p id="final-score" style="display:none; font-size: 24px; color: var(--primary);"></p>
             <button id="start-btn" onclick="event.stopPropagation(); startGame()">BAŞLA</button>
+            
             <div id="ad-box">
-                <iframe id="ad-frame" src="" width="300" height="100" frameborder="0" scrolling="no"></iframe>
+                <iframe id="ad-frame" width="300" height="100" frameborder="0" scrolling="no"></iframe>
             </div>
         </div>
     </div>
@@ -66,53 +61,55 @@
     const ctx = canvas.getContext('2d');
     const adFrame = document.getElementById('ad-frame');
     const adBox = document.getElementById('ad-box');
-    
-    let score = 0, gameActive = false, lang = 'tr';
-    let player = { x: 50, y: 0, w: 30, h: 30, dy: 0, gravity: 0.6 };
-    let obstacles = [];
-    let speed = 5;
+    const adLink = "https://omg10.com/4/10619187";
 
-    const texts = {
-        tr: { title: "GRAVITY SHIFT", desc: "Dokunarak yerçekimini değiştir!", btn: "BAŞLA", final: "Skor: " },
-        en: { title: "GRAVITY SHIFT", desc: "Tap to shift gravity!", btn: "START", final: "Score: " }
-    };
-
-    function setLang(l) {
-        lang = l;
-        document.getElementById('t-title').innerText = texts[l].title;
-        document.getElementById('t-desc').innerText = texts[l].desc;
-        document.getElementById('start-btn').innerText = texts[l].btn;
-    }
+    let score = 0, gameActive = false, player, obstacles = [], speed = 4;
 
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        player.y = canvas.height / 2;
     }
     window.addEventListener('resize', resize);
     resize();
 
     function startGame() {
-        score = 0;
-        speed = 5;
-        obstacles = [];
-        player.y = canvas.height / 2;
-        player.dy = 0;
-        player.gravity = 0.6;
-        gameActive = true;
-        document.getElementById('score').innerText = "0";
-        document.getElementById('overlay').style.display = 'none';
-        adBox.style.display = 'none';
-        adFrame.src = "";
-        requestAnimationFrame(update);
+        try {
+            score = 0;
+            speed = 4;
+            obstacles = [];
+            player = { x: 50, y: canvas.height / 2, size: 25, dy: 0, g: 0.5 };
+            gameActive = true;
+            document.getElementById('score').innerText = "0";
+            document.getElementById('overlay').style.display = 'none';
+            adBox.style.display = 'none';
+            adFrame.src = "about:blank"; // Temizle
+            requestAnimationFrame(gameLoop);
+        } catch(e) { console.error("Başlatma hatası:", e); }
     }
 
-    function shiftGravity(e) {
-        if(!gameActive) return;
-        player.gravity *= -1; // Yerçekimini tersine çevir
+    function triggerGravity() {
+        if(gameActive) player.g *= -1;
     }
 
-    function spawnObstacle() {
+    function gameOver() {
+        gameActive = false;
+        document.getElementById('overlay').style.display = 'flex';
+        document.getElementById('final-score').innerText = "SKOR: " + score;
+        document.getElementById('final-score').style.display = 'block';
+        
+        // Reklamı Göster
+        adBox.style.display = 'block';
+        adFrame.src = adLink;
+    }
+
+    function gameLoop() {
         if(!gameActive) return;
-        let h = 100 + Math.random() * 150;
-        let isTop = Math.random() >
+
+        ctx.fillStyle = "#050505";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Fizik
+        player.dy += player.g;
+        player.y += player.dy;
+
+        // Sınır Kontrolü
