@@ -3,38 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Ghost</title>
+    <title>Neon Ghost: Global Edition</title>
     <style>
-        :root { --neon: #ff00ff; --bg: #000; }
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Arial', sans-serif; touch-action: none; user-select: none; color: white; }
-        canvas { display: block; }
+        :root { --neon: #ff00ff; --cyan: #00ffff; --bg: #050505; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; color: white; }
+        canvas { display: block; filter: blur(0.5px); }
 
-        #ui { position: absolute; top: 30px; width: 100%; text-align: center; pointer-events: none; z-index: 10; }
-        #score { font-size: 70px; font-weight: bold; color: var(--neon); text-shadow: 0 0 20px var(--neon); }
+        /* Arayüz Elemanları */
+        #ui { position: absolute; top: 20px; width: 100%; text-align: center; pointer-events: none; z-index: 10; }
+        #score { font-size: 60px; font-weight: 900; color: #fff; text-shadow: 0 0 15px var(--neon); }
 
         #overlay { 
-            position: absolute; inset: 0; background: rgba(0,0,0,0.9); 
+            position: absolute; inset: 0; background: rgba(0,0,0,0.95); 
             display: flex; flex-direction: column; justify-content: center; 
             align-items: center; z-index: 100;
         }
         
         .menu-box { 
-            background: #050505; padding: 40px; border-radius: 50%; 
-            border: 4px solid var(--neon); text-align: center; width: 300px; height: 300px;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            box-shadow: 0 0 60px rgba(255,0,255,0.2);
+            background: #111; padding: 25px; border-radius: 20px; 
+            border: 2px solid var(--neon); text-align: center; width: 320px;
+            box-shadow: 0 0 40px rgba(255,0,255,0.15);
         }
 
-        h1 { color: #fff; font-size: 20px; margin: 0; letter-spacing: 3px; }
-        #best-score { color: #00ffff; font-size: 14px; margin-top: 5px; }
-
-        #start-btn { 
-            padding: 12px 30px; font-size: 18px; background: var(--neon); 
-            border: none; border-radius: 5px; color: #fff; font-weight: bold; 
-            cursor: pointer; margin-top: 15px; box-shadow: 0 0 15px var(--neon);
+        input { 
+            width: 80%; padding: 12px; margin: 15px 0; border-radius: 10px; border: 1px solid var(--cyan);
+            background: #000; color: #fff; text-align: center; font-size: 16px; outline: none;
         }
 
-        #ad-box { margin-top: 20px; width: 300px; height: 100px; overflow: hidden; }
+        .btn { 
+            padding: 12px 30px; font-size: 18px; border: none; border-radius: 10px; 
+            font-weight: bold; cursor: pointer; transition: 0.3s; width: 90%; margin-bottom: 10px;
+        }
+        
+        #start-btn { background: var(--neon); color: #fff; box-shadow: 0 0 15px var(--neon); }
+        #share-btn { background: #25D366; color: #fff; display: none; }
+
+        .leaderboard { 
+            margin: 15px 0; background: #000; padding: 10px; border-radius: 10px; 
+            font-size: 13px; text-align: left; border: 1px solid #333;
+        }
+        .lb-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #222; }
+        .lb-row.me { color: var(--cyan); font-weight: bold; }
+
+        #ad-box { margin-top: 15px; width: 100%; height: 100px; }
     </style>
 </head>
 <body onpointerdown="teleport()">
@@ -43,13 +54,23 @@
 
     <div id="overlay">
         <div class="menu-box">
-            <h1 id="m-title">NEON GHOST</h1>
-            <p id="best-score">EN İYİ: 0</p>
-            <button id="start-btn" onclick="event.stopPropagation(); startGame()">BAŞLA</button>
-        </div>
-        
-        <div id="ad-box">
-            <iframe id="ad-frame" width="300" height="100" frameborder="0" scrolling="no"></iframe>
+            <h2 id="m-title" style="margin:0; color:var(--cyan)">NEON GHOST</h2>
+            
+            <div id="nick-section">
+                <input type="text" id="nickname" placeholder="Nickname Gir..." maxlength="12">
+            </div>
+
+            <div id="leaderboard-section" class="leaderboard" style="display:none">
+                <div style="text-align:center; font-weight:bold; margin-bottom:5px; color:var(--neon)">DÜNYA SIRALAMASI</div>
+                <div id="lb-content"></div>
+            </div>
+
+            <button id="start-btn" class="btn" onclick="event.stopPropagation(); startGame()">OYNA</button>
+            <button id="share-btn" class="btn" onclick="event.stopPropagation(); shareScore()">SKORU PAYLAŞ</button>
+
+            <div id="ad-box">
+                <iframe id="ad-frame" width="300" height="100" frameborder="0" scrolling="no"></iframe>
+            </div>
         </div>
     </div>
 
@@ -61,9 +82,15 @@
     const adFrame = document.getElementById('ad-frame');
     const adLink = "https://omg10.com/4/10619187";
     
-    let score = 0, bestScore = localStorage.getItem('bestGhost') || 0, gameActive = false;
-    let radius = 100, playerRadius = 130, obstacles = [], angle = 0;
-    let targetRadius = 130; // 130 dış, 70 iç
+    let score = 0, bestScore = 0, gameActive = false, nickname = "";
+    let playerRadius = 130, targetRadius = 130, angle = 0;
+    let obstacles = [];
+    let gameSpeed = 1;
+
+    // LocalStorage'dan nickname çek
+    if(localStorage.getItem('ghostNick')) {
+        document.getElementById('nickname').value = localStorage.getItem('ghostNick');
+    }
 
     function resize() {
         canvas.width = window.innerWidth;
@@ -72,91 +99,43 @@
     window.addEventListener('resize', resize);
     resize();
 
-    document.getElementById('best-score').innerText = "EN İYİ: " + bestScore;
-
     function startGame() {
-        score = 0; obstacles = []; gameActive = true;
+        nickname = document.getElementById('nickname').value || "Anonim";
+        localStorage.setItem('ghostNick', nickname);
+        
+        score = 0; gameSpeed = 1; obstacles = []; gameActive = true;
         document.getElementById('score').innerText = "0";
         document.getElementById('overlay').style.display = 'none';
+        document.getElementById('nick-section').style.display = 'none';
         adFrame.src = "about:blank";
+        
         spawnObstacle();
         requestAnimationFrame(update);
     }
 
     function teleport() {
         if(!gameActive) return;
-        targetRadius = (targetRadius === 130) ? 70 : 130;
+        targetRadius = (targetRadius === 130) ? 75 : 130;
     }
 
     function spawnObstacle() {
         if(!gameActive) return;
         let isInner = Math.random() > 0.5;
+        // Başlangıçta daha seyrek, puan arttıkça daha sık engel
+        let delay = Math.max(500, 1500 - (score * 30));
+        
         obstacles.push({
             angle: 0,
-            orbit: isInner ? 70 : 130,
-            speed: 0.03 + (score * 0.001),
-            size: 20 + Math.random() * 20
+            orbit: isInner ? 75 : 130,
+            speed: (0.02 + Math.random() * 0.015) * gameSpeed,
+            size: 25
         });
-        setTimeout(spawnObstacle, Math.max(600, 1200 - (score * 40)));
+        setTimeout(spawnObstacle, delay);
     }
 
     function gameOver() {
         gameActive = false;
-        if(score > bestScore) {
-            bestScore = score;
-            localStorage.setItem('bestGhost', bestScore);
-            document.getElementById('best-score').innerText = "YENİ REKOR: " + bestScore;
-        }
         document.getElementById('overlay').style.display = 'flex';
-        adFrame.src = adLink;
-    }
-
-    function update() {
-        if(!gameActive) return;
-        ctx.fillStyle = "rgba(0,0,0,0.15)";
-        ctx.fillRect(0,0,canvas.width, canvas.height);
-
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-
-        // Yörünge Çizgileri
-        ctx.strokeStyle = "#111"; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.arc(cx, cy, 130, 0, Math.PI*2); ctx.stroke();
-        ctx.beginPath(); ctx.arc(cx, cy, 70, 0, Math.PI*2); ctx.stroke();
-
-        // Oyuncu (Yumuşak Işınlanma)
-        playerRadius += (targetRadius - playerRadius) * 0.3;
-        angle += 0.02;
-        let px = cx + Math.cos(angle) * playerRadius;
-        let py = cy + Math.sin(angle) * playerRadius;
-
-        ctx.fillStyle = "#fff"; ctx.shadowBlur = 20; ctx.shadowColor = "#fff";
-        ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI*2); ctx.fill();
-        ctx.shadowBlur = 0;
-
-        // Engeller
-        for(let i = obstacles.length - 1; i >= 0; i--) {
-            let o = obstacles[i];
-            o.angle += o.speed;
-            let ox = cx + Math.cos(o.angle) * o.orbit;
-            let oy = cy + Math.sin(o.angle) * o.orbit;
-
-            ctx.fillStyle = "#ff00ff";
-            ctx.beginPath(); ctx.arc(ox, oy, o.size/2, 0, Math.PI*2); ctx.fill();
-
-            // Çarpışma
-            let dist = Math.hypot(px - ox, py - oy);
-            if(dist < 10 + o.size/2) gameOver();
-
-            // Puan (Tam tur atınca)
-            if(o.angle > Math.PI * 2) {
-                score++;
-                document.getElementById('score').innerText = score;
-                obstacles.splice(i, 1);
-            }
-        }
-        requestAnimationFrame(update);
-    }
-</script>
-</body>
-</html>
+        document.getElementById('leaderboard-section').style.display = 'block';
+        document.getElementById('share-btn').style.display = 'block';
+        document.getElementById('m-title').innerText = "YANDIN!";
