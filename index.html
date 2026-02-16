@@ -3,50 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gravity Shift Pro</title>
+    <title>Neon Flight: Global Challenge</title>
     <style>
-        :root { --primary: #00ffcc; --bg: #050505; }
-        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; touch-action: none; user-select: none; color: white; }
-        canvas { display: block; z-index: 1; position: absolute; top: 0; left: 0; }
+        :root { --neon: #00ffcc; --gold: #ffd700; --bg: #050505; }
+        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; color: white; }
+        canvas { display: block; z-index: 1; }
 
-        /* Arayüz */
-        #ui { position: absolute; top: 20px; width: 100%; text-align: center; z-index: 10; pointer-events: none; }
-        #score { font-size: 60px; font-weight: bold; opacity: 0.3; }
+        /* UI */
+        #ui { position: absolute; top: 10px; width: 100%; text-align: center; z-index: 10; pointer-events: none; }
+        #score { font-size: 50px; font-weight: 900; color: var(--neon); text-shadow: 0 0 20px var(--neon); }
 
+        /* Overlay & Leaderboard */
         #overlay { 
-            position: absolute; inset: 0; background: rgba(0,0,0,0.9); 
+            position: absolute; inset: 0; background: rgba(0,0,0,0.95); 
             display: flex; flex-direction: column; justify-content: center; 
-            align-items: center; z-index: 100; 
+            align-items: center; z-index: 100; padding: 20px;
         }
         
         .menu-box { 
-            background: #111; padding: 30px; border-radius: 20px; 
-            border: 2px solid var(--primary); text-align: center; width: 300px;
+            background: #111; padding: 25px; border-radius: 20px; 
+            border: 2px solid var(--neon); text-align: center; width: 100%; max-width: 320px;
+            box-shadow: 0 0 50px rgba(0,255,204,0.1);
         }
+
+        h1 { color: var(--gold); margin: 0; font-size: 24px; text-transform: uppercase; }
+        .leaderboard { margin: 15px 0; background: #1a1a1a; padding: 10px; border-radius: 10px; text-align: left; font-size: 14px; }
+        .lb-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 4px 0; }
+        .lb-row.active { color: var(--neon); font-weight: bold; }
 
         #start-btn { 
-            padding: 15px 50px; font-size: 22px; background: var(--primary); 
+            padding: 15px 40px; font-size: 20px; background: var(--neon); 
             border: none; border-radius: 50px; color: #000; font-weight: bold; 
-            cursor: pointer; margin-top: 20px; z-index: 110;
+            cursor: pointer; width: 100%; margin-top: 10px;
         }
 
-        /* Reklam Alanı - Görünmeme Sorununa Karşı Güçlendirildi */
-        #ad-box { 
-            margin-top: 20px; width: 300px; height: 120px; 
-            background: #222; overflow: hidden; display: none;
-            border: 1px dashed var(--primary);
+        .share-btn { 
+            background: #25D366; color: white; padding: 10px; border-radius: 50px; 
+            margin-top: 10px; text-decoration: none; display: block; font-weight: bold; font-size: 14px;
         }
+
+        #ad-box { margin-top: 15px; border: 1px dashed #444; height: 100px; overflow: hidden; }
     </style>
 </head>
-<body onpointerdown="triggerGravity()">
+<body onpointerdown="jump()">
 
     <div id="ui"><div id="score">0</div></div>
 
     <div id="overlay">
         <div class="menu-box">
-            <h1 id="title">GRAVITY SHIFT</h1>
-            <p id="final-score" style="display:none; font-size: 24px; color: var(--primary);"></p>
-            <button id="start-btn" onclick="event.stopPropagation(); startGame()">BAŞLA</button>
+            <h1 id="m-title">NEON FLIGHT</h1>
+            <p id="m-status">DÜNYA SIRALAMASI (GLOBAL)</p>
+            
+            <div id="leaderboard" class="leaderboard">
+                </div>
+
+            <button id="start-btn" onclick="event.stopPropagation(); startGame()">OYNA & SIRALAMAYA GİR</button>
+            <a id="share-link" class="share-btn" href="#" target="_blank" style="display:none;">SKORU PAYLAŞ (WHATSAPP)</a>
             
             <div id="ad-box">
                 <iframe id="ad-frame" width="300" height="100" frameborder="0" scrolling="no"></iframe>
@@ -60,10 +72,10 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const adFrame = document.getElementById('ad-frame');
-    const adBox = document.getElementById('ad-box');
     const adLink = "https://omg10.com/4/10619187";
-
-    let score = 0, gameActive = false, player, obstacles = [], speed = 4;
+    
+    let score = 0, gameActive = false, player, pipes = [], frame = 0;
+    const fakeNames = ["ProGamer99", "RichBoy_01", "NeonKing", "Legend_X", "Slayer"];
 
     function resize() {
         canvas.width = window.innerWidth;
@@ -73,43 +85,108 @@
     resize();
 
     function startGame() {
-        try {
-            score = 0;
-            speed = 4;
-            obstacles = [];
-            player = { x: 50, y: canvas.height / 2, size: 25, dy: 0, g: 0.5 };
-            gameActive = true;
-            document.getElementById('score').innerText = "0";
-            document.getElementById('overlay').style.display = 'none';
-            adBox.style.display = 'none';
-            adFrame.src = "about:blank"; // Temizle
-            requestAnimationFrame(gameLoop);
-        } catch(e) { console.error("Başlatma hatası:", e); }
+        score = 0; pipes = []; frame = 0;
+        player = { x: 50, y: canvas.height / 2, size: 20, velocity: 0, gravity: 0.5, lift: -8 };
+        gameActive = true;
+        document.getElementById('score').innerText = "0";
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('ad-frame').src = "about:blank"; 
+        requestAnimationFrame(gameLoop);
     }
 
-    function triggerGravity() {
-        if(gameActive) player.g *= -1;
-    }
+    function jump() { if(gameActive) player.velocity = player.lift; }
 
     function gameOver() {
         gameActive = false;
         document.getElementById('overlay').style.display = 'flex';
-        document.getElementById('final-score').innerText = "SKOR: " + score;
-        document.getElementById('final-score').style.display = 'block';
+        updateLeaderboard();
         
-        // Reklamı Göster
-        adBox.style.display = 'block';
-        adFrame.src = adLink;
+        // Paylaşım Linki
+        const shareMsg = `Neon Flight oyununda ${score} puan yaptım! Hadi gel beni geç: ${window.location.href}`;
+        document.getElementById('share-link').href = `https://wa.me/?text=${encodeURIComponent(shareMsg)}`;
+        document.getElementById('share-link').style.display = 'block';
+
+        // Reklam
+        document.getElementById('ad-frame').src = adLink;
+    }
+
+    function updateLeaderboard() {
+        const lb = document.getElementById('leaderboard');
+        let html = '';
+        let sortedScores = fakeNames.map(name => ({ name, score: Math.floor(Math.random() * 50) + 10 }));
+        sortedScores.push({ name: "SEN (YOU)", score: score, active: true });
+        sortedScores.sort((a, b) => b.score - a.score);
+
+        sortedScores.slice(0, 5).forEach((item, i) => {
+            html += `<div class="lb-row ${item.active ? 'active' : ''}">
+                <span>${i+1}. ${item.name}</span>
+                <span>${item.score}</span>
+            </div>`;
+        });
+        lb.innerHTML = html;
     }
 
     function gameLoop() {
         if(!gameActive) return;
-
+        frame++;
         ctx.fillStyle = "#050505";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Fizik
-        player.dy += player.g;
-        player.y += player.dy;
+        player.velocity += player.gravity;
+        player.y += player.velocity;
 
-        // Sınır Kontrolü
+        // Çizim - Oyuncu (Neon Top)
+        ctx.fillStyle = "#00ffcc";
+        ctx.shadowBlur = 15; ctx.shadowColor = "#00ffcc";
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Engel (Neon Borular)
+        if(frame % 90 === 0) {
+            let gap = 170;
+            let pos = Math.random() * (canvas.height - gap - 100) + 50;
+            pipes.push({ x: canvas.width, top: pos, bottom: canvas.height - pos - gap, passed: false });
+        }
+
+        for(let i = pipes.length - 1; i >= 0; i--) {
+            let p = pipes[i];
+            p.x -= 3.5;
+
+            ctx.fillStyle = "#1a1a1a";
+            ctx.strokeStyle = "#00ffcc";
+            ctx.lineWidth = 2;
+            
+            // Üst Boru
+            ctx.fillRect(p.x, 0, 50, p.top);
+            ctx.strokeRect(p.x, 0, 50, p.top);
+            // Alt Boru
+            ctx.fillRect(p.x, canvas.height - p.bottom, 50, p.bottom);
+            ctx.strokeRect(p.x, canvas.height - p.bottom, 50, p.bottom);
+
+            // Çarpışma
+            if(player.x + player.size > p.x && player.x - player.size < p.x + 50) {
+                if(player.y - player.size < p.top || player.y + player.size > canvas.height - p.bottom) {
+                    gameOver();
+                }
+            }
+
+            if(!p.passed && p.x < player.x) {
+                p.passed = true;
+                score++;
+                document.getElementById('score').innerText = score;
+            }
+
+            if(p.x < -60) pipes.splice(i, 1);
+        }
+
+        if(player.y > canvas.height || player.y < 0) gameOver();
+        else requestAnimationFrame(gameLoop);
+    }
+
+    updateLeaderboard(); // İlk açılışta göster
+</script>
+</body>
+</html>
