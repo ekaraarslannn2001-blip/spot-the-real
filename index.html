@@ -3,42 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Agar.io - Global Battle</title>
+    <title>Neon Agar.io - Mobile Flags</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         canvas { display: block; }
 
         /* UI */
-        #ui-layer { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #00ffcc; pointer-events: none; z-index: 10; }
-        .lb-title { color: #00ffcc; font-weight: bold; text-align: center; margin-bottom: 5px; font-size: 14px; }
-        .lb-item { display: flex; justify-content: space-between; gap: 30px; font-size: 12px; color: #fff; margin-bottom: 3px; }
+        #ui-layer { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; border: 1px solid #00ffcc; pointer-events: none; z-index: 10; font-size: 10px; }
+        .lb-item { display: flex; justify-content: space-between; gap: 15px; color: #fff; margin-bottom: 2px; }
         .me { color: #00ffcc; font-weight: bold; }
 
-        #overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .menu { background: #111; padding: 30px; border-radius: 20px; border: 2px solid #00ffcc; text-align: center; width: 320px; color: white; }
-        input { width: 85%; padding: 12px; margin: 15px 0; background: #000; border: 1px solid #444; color: white; border-radius: 5px; text-align: center; }
-        .btn { width: 100%; padding: 15px; background: #00ffcc; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn:hover { background: #00cca3; }
+        #overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .menu { background: #111; padding: 20px; border-radius: 15px; border: 2px solid #00ffcc; text-align: center; width: 280px; color: white; }
         
-        #ad-box { margin-top: 20px; border: 1px dashed #333; height: 100px; }
+        /* Flag Picker */
+        .flag-picker { display: flex; justify-content: center; gap: 10px; margin: 15px 0; font-size: 30px; }
+        .flag { cursor: pointer; opacity: 0.4; transition: 0.3s; padding: 5px; }
+        .flag.active { opacity: 1; transform: scale(1.2); filter: drop-shadow(0 0 10px #00ffcc); }
+
+        input { width: 85%; padding: 10px; margin: 10px 0; background: #000; border: 1px solid #333; color: white; border-radius: 5px; text-align: center; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; background: #00ffcc; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: #000; font-size: 16px; }
+        
+        #ad-box { margin-top: 15px; height: 100px; border: 1px dashed #444; overflow: hidden; }
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
-        <div class="lb-title">LEADERBOARD</div>
+        <div style="color:#00ffcc; font-weight:bold; margin-bottom:5px; text-align:center;">LEADERBOARD</div>
         <div id="lb-content"></div>
     </div>
 
     <div id="overlay">
         <div class="menu">
-            <h1 style="color:#00ffcc; margin:0">NEON.IO</h1>
-            <input type="text" id="nick" placeholder="Enter Nickname..." maxlength="12">
-            <p style="font-size: 12px; color: #888;">Multiplayer Server: <span style="color:#00ffcc">Global-1</span></p>
-            <button class="btn" onclick="startGame()">CONNECT & PLAY</button>
-            <div id="ad-box">
-                <iframe id="ad-frame" width="300" height="100" frameborder="0" scrolling="no"></iframe>
+            <h2 style="color:#00ffcc; margin:0">NEON.IO MOBILE</h2>
+            <input type="text" id="nick" placeholder="Enter Nickname" maxlength="10">
+            
+            <div class="flag-picker">
+                <span class="flag active" onclick="setFlag(this, '🇹🇷')">🇹🇷</span>
+                <span class="flag" onclick="setFlag(this, '🇺🇸')">🇺🇸</span>
+                <span class="flag" onclick="setFlag(this, '🇩🇪')">🇩🇪</span>
+                <span class="flag" onclick="setFlag(this, '🇧🇷')">🇧🇷</span>
+                <span class="flag" onclick="setFlag(this, '🇬🇧')">🇬🇧</span>
             </div>
+
+            <button class="btn" id="play-btn">START GAME</button>
+            <div id="ad-box"><iframe id="ad-frame" width="300" height="100" frameborder="0"></iframe></div>
         </div>
     </div>
 
@@ -49,84 +59,76 @@
     const ctx = canvas.getContext('2d');
     const adLink = "https://omg10.com/4/10619187";
     
-    let gameActive = false, world = { w: 5000, h: 5000 };
-    let player = { x: 2500, y: 2500, r: 30, nick: "", zoom: 1, color: "#00ffcc" };
-    let mouse = { x: 0, y: 0 }, foods = [], bots = [];
-    const botNames = ["ProGamer", "Sniper", "Rex", "Killer", "Alpha", "Shadow", "Istanbul_34", "Eagle", "Ghost", "ZeuS"];
+    let gameActive = false, world = { w: 4000, h: 4000 };
+    let player = { x: 2000, y: 2000, r: 35, nick: "", zoom: 1, flag: "🇹🇷" };
+    let inputPos = { x: 0, y: 0 };
+    let foods = [], bots = [];
+    const botFlags = ['🇫🇷', '🇯🇵', '🇮🇹', '🇰🇷', '🇪🇸', '🇷🇺', '🇨🇳'];
+    const botNames = ["Pro", "Rex", "Shadow", "Istanbul", "King", "Alpha"];
 
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     window.addEventListener('resize', resize); resize();
 
-    window.addEventListener('mousemove', e => {
-        mouse.x = e.clientX - canvas.width/2;
-        mouse.y = e.clientY - canvas.height/2;
-    });
+    // Mobile & Desktop Controls
+    const handleInput = (e) => {
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        inputPos.x = clientX - canvas.width/2;
+        inputPos.y = clientY - canvas.height/2;
+    };
+    window.addEventListener('mousemove', handleInput);
+    window.addEventListener('touchmove', (e) => { e.preventDefault(); handleInput(e); }, {passive: false});
 
-    function init() {
-        foods = []; bots = [];
-        for(let i=0; i<600; i++) spawnFood();
-        for(let i=0; i<15; i++) spawnBot(true);
+    function setFlag(el, flag) {
+        document.querySelectorAll('.flag').forEach(f => f.classList.remove('active'));
+        el.classList.add('active');
+        player.flag = flag;
     }
 
     function spawnFood() {
-        foods.push({ x: Math.random()*world.w, y: Math.random()*world.h, r: 6, c: `hsl(${Math.random()*360}, 70%, 50%)` });
+        foods.push({ x: Math.random()*world.w, y: Math.random()*world.h, r: 5, c: `hsl(${Math.random()*360}, 70%, 50%)` });
     }
 
-    function spawnBot(randomPos = false) {
+    function spawnBot() {
         bots.push({
-            x: randomPos ? Math.random()*world.w : (Math.random() > 0.5 ? 0 : world.w),
-            y: Math.random()*world.h,
-            r: 20 + Math.random()*80,
+            x: Math.random()*world.w, y: Math.random()*world.h,
+            r: 20 + Math.random()*70,
+            flag: botFlags[Math.floor(Math.random()*botFlags.length)],
             nick: botNames[Math.floor(Math.random()*botNames.length)],
-            c: `hsl(${Math.random()*360}, 60%, 50%)`,
-            vx: (Math.random()-0.5)*4,
-            vy: (Math.random()-0.5)*4
+            vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3
         });
     }
 
-    function startGame() {
+    document.getElementById('play-btn').addEventListener('click', () => {
         player.nick = document.getElementById('nick').value || "Guest";
-        player.r = 30; player.x = 2500; player.y = 2500;
-        init();
+        foods = []; bots = [];
+        for(let i=0; i<300; i++) spawnFood();
+        for(let i=0; i<10; i++) spawnBot();
         gameActive = true;
         document.getElementById('overlay').style.display = 'none';
         document.getElementById('ad-frame').src = "about:blank";
         requestAnimationFrame(update);
-    }
-
-    function gameOver() {
-        gameActive = false;
-        document.getElementById('overlay').style.display = 'flex';
-        document.getElementById('ad-frame').src = adLink;
-    }
-
-    function updateLeaderboard() {
-        let all = bots.map(b => ({n: b.nick, s: Math.floor(b.r)}));
-        all.push({n: player.nick, s: Math.floor(player.r), me: true});
-        all.sort((a,b) => b.s - a.s);
-        document.getElementById('lb-content').innerHTML = all.slice(0, 7).map(i => 
-            `<div class="lb-item ${i.me?'me':''}"><span>${i.n}</span><span>${i.s}</span></div>`).join('');
-    }
+    });
 
     function update() {
         if(!gameActive) return;
 
-        // --- PLAYER LOGIC ---
-        let speed = Math.max(1.2, 5 - (player.r / 80));
-        let dist = Math.hypot(mouse.x, mouse.y);
-        if(dist > 10) {
-            player.x += (mouse.x / dist) * speed;
-            player.y += (mouse.y / dist) * speed;
+        // Player Logic
+        let speed = Math.max(1.5, 6 - (player.r / 60));
+        let dist = Math.hypot(inputPos.x, inputPos.y);
+        if(dist > 5) {
+            player.x += (inputPos.x / dist) * speed;
+            player.y += (inputPos.y / dist) * speed;
         }
         player.x = Math.max(player.r, Math.min(world.w - player.r, player.x));
         player.y = Math.max(player.r, Math.min(world.h - player.r, player.y));
-        if(player.r > 60) player.r -= 0.005; // Mass decay
+        if(player.r > 50) player.r -= 0.005;
 
-        // ZOOM LOGIC
-        let targetZoom = 40 / player.r;
-        player.zoom += (Math.max(0.25, targetZoom) - player.zoom) * 0.05;
+        // Camera Zoom
+        let targetZoom = 45 / player.r;
+        player.zoom += (Math.max(0.3, targetZoom) - player.zoom) * 0.1;
 
-        // --- DRAWING ---
+        // Draw
         ctx.setTransform(1,0,0,1,0,0);
         ctx.fillStyle = '#050505'; ctx.fillRect(0,0,canvas.width, canvas.height);
 
@@ -139,7 +141,7 @@
         for(let i=0; i<=world.w; i+=200) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,world.h); ctx.stroke(); }
         for(let i=0; i<=world.h; i+=200) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(world.w,i); ctx.stroke(); }
 
-        // Food
+        // Food & Collision
         foods.forEach((f, i) => {
             ctx.fillStyle = f.c; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
             if(Math.hypot(player.x - f.x, player.y - f.y) < player.r) { foods.splice(i,1); player.r += 0.8; spawnFood(); }
@@ -148,25 +150,29 @@
         // Bots
         bots.forEach((b, i) => {
             b.x += b.vx; b.y += b.vy;
-            if(b.x < 0 || b.x > world.w) b.vx *= -1;
-            if(b.y < 0 || b.y > world.h) b.vy *= -1;
+            if(b.x < b.r || b.x > world.w - b.r) b.vx *= -1;
+            if(b.y < b.r || b.y > world.h - b.r) b.vy *= -1;
+            
+            ctx.font = `${b.r * 1.3}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle";
+            ctx.fillText(b.flag, b.x, b.y);
 
-            ctx.fillStyle = b.c; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = "white"; ctx.font = `${b.r/2}px Arial`; ctx.textAlign="center"; ctx.fillText(b.nick, b.x, b.y);
-
-            // Bot vs Player Collision
             let d = Math.hypot(player.x - b.x, player.y - b.y);
-            if(d < player.r + b.r - 5) {
-                if(player.r > b.r * 1.15) { bots.splice(i,1); player.r += b.r/3; spawnBot(); }
-                else if(b.r > player.r * 1.15) { gameOver(); }
+            if(d < player.r + b.r - 10) {
+                if(player.r > b.r * 1.1) { bots.splice(i,1); player.r += b.r/4; spawnBot(); }
+                else if(b.r > player.r * 1.1) { gameActive = false; document.getElementById('overlay').style.display='flex'; document.getElementById('ad-frame').src=adLink; }
             }
         });
 
-        // Player
-        ctx.fillStyle = player.color; ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "black"; ctx.font = `bold ${player.r/2}px Arial`; ctx.fillText(player.nick, player.x, player.y);
+        // Player Draw
+        ctx.font = `${player.r * 1.3}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(player.flag, player.x, player.y);
 
-        if(Math.floor(Date.now()/1000) % 2 === 0) updateLeaderboard();
+        // LB Update
+        if(Math.floor(Date.now()/500) % 2 === 0) {
+            let lb = bots.map(b => ({n: b.nick, s: Math.floor(b.r)})).concat([{n: player.nick, s: Math.floor(player.r), me: true}]).sort((a,b)=>b.s-a.s);
+            document.getElementById('lb-content').innerHTML = lb.slice(0,5).map(i => `<div class="lb-item ${i.me?'me':''}"><span>${i.n}</span><span>${i.s}</span></div>`).join('');
+        }
+
         requestAnimationFrame(update);
     }
 </script>
