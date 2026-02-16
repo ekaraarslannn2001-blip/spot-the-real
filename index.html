@@ -3,38 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Click Dash</title>
+    <title>Click Dash - Pro</title>
     <style>
-        :root { --primary: #ff3e3e; --bg: #000; }
-        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; color: white; display: flex; flex-direction: column; height: 100vh; justify-content: center; align-items: center; }
+        :root { --primary: #00ffcc; --error: #ff3e3e; --bg: #0b0b0e; }
+        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; display: flex; flex-direction: column; height: 100vh; justify-content: center; align-items: center; user-select: none; }
         
-        #lang-box { position: absolute; top: 15px; right: 15px; z-index: 1000; }
-        .l-btn { background: #222; border: 1px solid white; color: white; padding: 5px 10px; cursor: pointer; border-radius: 5px; }
+        #lang-box { position: absolute; top: 20px; right: 20px; z-index: 1000; }
+        .l-btn { background: #1a1a1a; border: 1px solid var(--primary); color: white; padding: 8px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
 
-        #game-zone { width: 300px; text-align: center; }
-        #score-display { font-size: 60px; font-weight: bold; margin-bottom: 20px; }
+        #game-zone { width: 90%; max-width: 400px; text-align: center; position: relative; }
+        #score-display { font-size: 80px; font-weight: 900; color: rgba(255,255,255,0.1); margin-bottom: 10px; }
         
-        /* Bar Mekaniği */
-        #bar-container { width: 100%; height: 40px; background: #333; border-radius: 20px; position: relative; overflow: hidden; border: 2px solid #555; }
-        #target-zone { position: absolute; width: 40px; height: 100%; background: #00ffcc; left: 50%; transform: translateX(-50%); box-shadow: 0 0 15px #00ffcc; }
-        #pointer { position: absolute; width: 6px; height: 100%; background: white; left: 0; transition: none; }
+        /* Bar Geliştirmeleri */
+        #bar-container { width: 100%; height: 50px; background: #1a1a1a; border-radius: 10px; position: relative; overflow: hidden; border: 3px solid #333; transition: transform 0.1s; }
+        #target-zone { position: absolute; width: 60px; height: 100%; background: var(--primary); left: 50%; transform: translateX(-50%); box-shadow: 0 0 25px var(--primary); opacity: 0.6; }
+        #pointer { position: absolute; width: 8px; height: 100%; background: #fff; left: 0; box-shadow: 0 0 10px #fff; z-index: 5; }
 
-        #msg { margin-top: 20px; font-size: 18px; color: #aaa; }
+        .hit-effect { transform: scale(1.05); border-color: var(--primary) !important; }
 
         /* Menü */
-        #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 500; }
-        .m-box { background: #111; padding: 30px; border-radius: 20px; border: 2px solid var(--primary); text-align: center; width: 280px; }
-        #start-btn { padding: 15px 40px; font-size: 20px; background: var(--primary); border: none; border-radius: 30px; color: white; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        #menu { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 500; }
+        .m-box { background: #16161d; padding: 40px; border-radius: 25px; border: 2px solid var(--primary); text-align: center; width: 300px; box-shadow: 0 0 40px rgba(0,255,204,0.2); }
+        #start-btn { padding: 15px 50px; font-size: 22px; background: var(--primary); border: none; border-radius: 50px; color: #000; font-weight: bold; cursor: pointer; margin-top: 20px; }
         
-        /* Reklam Alanı */
-        #ad-box { margin-top: 20px; display: none; }
+        #ad-box { margin-top: 20px; display: none; min-height: 100px; }
     </style>
 </head>
-<body onclick="checkClick()">
+<body onpointerdown="checkClick(event)">
 
     <div id="lang-box">
-        <button class="l-btn" onclick="setLang('tr')">TR</button>
-        <button class="l-btn" onclick="setLang('en')">EN</button>
+        <button class="l-btn" onclick="event.stopPropagation(); setLang('tr')">TR</button>
+        <button class="l-btn" onclick="event.stopPropagation(); setLang('en')">EN</button>
     </div>
 
     <div id="game-zone">
@@ -43,81 +42,11 @@
             <div id="target-zone"></div>
             <div id="pointer"></div>
         </div>
-        <div id="msg">TAM ORTADA TIKLA!</div>
     </div>
 
     <div id="menu">
         <div class="m-box">
             <h1 id="t-title">CLICK DASH</h1>
-            <p id="t-desc">Çizgi yeşil alandayken ekrana dokun!</p>
-            <p id="t-final" style="display:none"></p>
-            <button id="start-btn" onclick="event.stopPropagation(); startGame()">BAŞLA</button>
-            <div id="ad-box">
-                <iframe id="ad-frame" src="" width="300" height="100" frameborder="0" scrolling="no"></iframe>
-            </div>
-        </div>
-    </div>
-
-<script>
-    let score = 0, pos = 0, dir = 1, speed = 2, gameActive = false, lang = 'tr';
-    const pointer = document.getElementById('pointer');
-    const adFrame = document.getElementById('ad-frame');
-    const adBox = document.getElementById('ad-box');
-    const texts = {
-        tr: { title: "CLICK DASH", desc: "Çizgi yeşildeyken dokun!", btn: "BAŞLA", final: "Skorun: ", msg: "TIKLA!" },
-        en: { title: "CLICK DASH", desc: "Tap when line is on green!", btn: "START", final: "Score: ", msg: "TAP!" }
-    };
-
-    function setLang(l) {
-        lang = l;
-        document.getElementById('t-title').innerText = texts[l].title;
-        document.getElementById('t-desc').innerText = texts[l].desc;
-        document.getElementById('start-btn').innerText = texts[l].btn;
-        document.getElementById('msg').innerText = texts[l].msg;
-    }
-
-    function startGame() {
-        score = 0;
-        speed = 2;
-        gameActive = true;
-        document.getElementById('score-display').innerText = score;
-        document.getElementById('menu').style.display = 'none';
-        adBox.style.display = 'none';
-        adFrame.src = "";
-        requestAnimationFrame(update);
-    }
-
-    function update() {
-        if(!gameActive) return;
-        pos += speed * dir;
-        if(pos >= 294 || pos <= 0) dir *= -1;
-        pointer.style.left = pos + 'px';
-        requestAnimationFrame(update);
-    }
-
-    function checkClick() {
-        if(!gameActive) return;
-        // Yeşil alan 130px ile 170px arası (300px barın ortası)
-        if(pos >= 130 && pos <= 170) {
-            score++;
-            speed += 0.3; // Her başarılı tıklamada hızlanır
-            document.getElementById('score-display').innerText = score;
-            // Küçük bir görsel efekt
-            document.getElementById('bar-container').style.borderColor = '#00ffcc';
-            setTimeout(() => document.getElementById('bar-container').style.borderColor = '#555', 100);
-        } else {
-            gameOver();
-        }
-    }
-
-    function gameOver() {
-        gameActive = false;
-        document.getElementById('menu').style.display = 'flex';
-        document.getElementById('t-final').style.display = 'block';
-        document.getElementById('t-final').innerText = texts[lang].final + score;
-        adBox.style.display = 'block';
-        adFrame.src = "https://omg10.com/4/10619187";
-    }
-</script>
-</body>
-</html>
+            <p id="t-desc">Tam ortada yakala!</p>
+            <p id="t-final" style="display:none; font-size: 24px; color: var(--primary); font-weight: bold;"></p>
+            <button id="start-btn" onclick="event.stopPropagation(); startGame()">BA
