@@ -3,104 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agar.io Clone - Neon Arena</title>
+    <title>Neon Agar.io - Global Battle</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #050505; font-family: sans-serif; color: white; touch-action: none; }
-        canvas { display: block; cursor: crosshair; }
-        
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; touch-action: none; }
+        canvas { display: block; }
+
         /* UI */
-        #overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 100; }
-        .menu { background: #111; padding: 30px; border: 2px solid #00ffcc; border-radius: 20px; text-align: center; width: 300px; }
-        input { width: 80%; padding: 10px; margin: 10px 0; background: #000; border: 1px solid #00ffcc; color: white; text-align: center; }
-        .btn { width: 100%; padding: 15px; background: #00ffcc; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #ad-box { margin-top: 15px; height: 100px; border: 1px dashed #444; }
+        #ui-layer { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #00ffcc; pointer-events: none; z-index: 10; }
+        .lb-title { color: #00ffcc; font-weight: bold; text-align: center; margin-bottom: 5px; font-size: 14px; }
+        .lb-item { display: flex; justify-content: space-between; gap: 30px; font-size: 12px; color: #fff; margin-bottom: 3px; }
+        .me { color: #00ffcc; font-weight: bold; }
+
+        #overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .menu { background: #111; padding: 30px; border-radius: 20px; border: 2px solid #00ffcc; text-align: center; width: 320px; color: white; }
+        input { width: 85%; padding: 12px; margin: 15px 0; background: #000; border: 1px solid #444; color: white; border-radius: 5px; text-align: center; }
+        .btn { width: 100%; padding: 15px; background: #00ffcc; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background: #00cca3; }
         
-        .skin-list { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; font-size: 24px; cursor: pointer; }
-        .skin.active { transform: scale(1.3); text-shadow: 0 0 10px #00ffcc; }
+        #ad-box { margin-top: 20px; border: 1px dashed #333; height: 100px; }
     </style>
 </head>
 <body>
 
+    <div id="ui-layer">
+        <div class="lb-title">LEADERBOARD</div>
+        <div id="lb-content"></div>
+    </div>
+
     <div id="overlay">
         <div class="menu">
-            <h1 style="color:#00ffcc; margin:0">NEON AGAR</h1>
-            <input type="text" id="nick" placeholder="Enter Nickname" maxlength="10">
-            <div class="skin-list">
-                <span class="skin active" onclick="selectSkin(this, '🇹🇷')">🇹🇷</span>
-                <span class="skin" onclick="selectSkin(this, '🇺🇸')">🇺🇸</span>
-                <span class="skin" onclick="selectSkin(this, '⚽')">⚽</span>
-                <span class="skin" onclick="selectSkin(this, '👽')">👽</span>
-            </div>
-            <button class="btn" onclick="startGame()">PLAY</button>
+            <h1 style="color:#00ffcc; margin:0">NEON.IO</h1>
+            <input type="text" id="nick" placeholder="Enter Nickname..." maxlength="12">
+            <p style="font-size: 12px; color: #888;">Multiplayer Server: <span style="color:#00ffcc">Global-1</span></p>
+            <button class="btn" onclick="startGame()">CONNECT & PLAY</button>
             <div id="ad-box">
                 <iframe id="ad-frame" width="300" height="100" frameborder="0" scrolling="no"></iframe>
             </div>
         </div>
     </div>
 
-    <canvas id="game"></canvas>
+    <canvas id="gameCanvas"></canvas>
 
 <script>
-    const canvas = document.getElementById('game');
+    const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const adLink = "https://omg10.com/4/10619187";
+    
+    let gameActive = false, world = { w: 5000, h: 5000 };
+    let player = { x: 2500, y: 2500, r: 30, nick: "", zoom: 1, color: "#00ffcc" };
+    let mouse = { x: 0, y: 0 }, foods = [], bots = [];
+    const botNames = ["ProGamer", "Sniper", "Rex", "Killer", "Alpha", "Shadow", "Istanbul_34", "Eagle", "Ghost", "ZeuS"];
 
-    let gameActive = false, score = 0;
-    let mouse = { x: 0, y: 0 };
-    let player = { x: 0, y: 0, r: 20, color: '🇹🇷' };
-    let foods = [], enemies = [];
-    const flags = ['🇺🇸', '🇩🇪', '🇬🇧', '🇧🇷', '🇯🇵', '🇫🇷'];
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
 
-    function selectSkin(el, s) {
-        document.querySelectorAll('.skin').forEach(x => x.classList.remove('active'));
-        el.classList.add('active');
-        player.color = s;
-    }
-
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    // Mouse ve Touch takibi
-    window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-    window.addEventListener('touchmove', e => { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }, {passive: false});
+    window.addEventListener('mousemove', e => {
+        mouse.x = e.clientX - canvas.width/2;
+        mouse.y = e.clientY - canvas.height/2;
+    });
 
     function init() {
-        player.x = canvas.width / 2;
-        player.y = canvas.height / 2;
-        player.r = 25;
-        foods = [];
-        enemies = [];
-        // Yemekleri oluştur
-        for(let i=0; i<100; i++) spawnFood();
-        // Botları oluştur
-        for(let i=0; i<5; i++) spawnEnemy();
+        foods = []; bots = [];
+        for(let i=0; i<600; i++) spawnFood();
+        for(let i=0; i<15; i++) spawnBot(true);
     }
 
     function spawnFood() {
-        foods.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            r: 4,
-            color: `hsl(${Math.random() * 360}, 70%, 60%)`
-        });
+        foods.push({ x: Math.random()*world.w, y: Math.random()*world.h, r: 6, c: `hsl(${Math.random()*360}, 70%, 50%)` });
     }
 
-    function spawnEnemy() {
-        enemies.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            r: 15 + Math.random() * 40,
-            color: flags[Math.floor(Math.random() * flags.length)],
-            vx: (Math.random() - 0.5) * 2,
-            vy: (Math.random() - 0.5) * 2
+    function spawnBot(randomPos = false) {
+        bots.push({
+            x: randomPos ? Math.random()*world.w : (Math.random() > 0.5 ? 0 : world.w),
+            y: Math.random()*world.h,
+            r: 20 + Math.random()*80,
+            nick: botNames[Math.floor(Math.random()*botNames.length)],
+            c: `hsl(${Math.random()*360}, 60%, 50%)`,
+            vx: (Math.random()-0.5)*4,
+            vy: (Math.random()-0.5)*4
         });
     }
 
     function startGame() {
+        player.nick = document.getElementById('nick').value || "Guest";
+        player.r = 30; player.x = 2500; player.y = 2500;
         init();
         gameActive = true;
         document.getElementById('overlay').style.display = 'none';
@@ -114,72 +100,73 @@
         document.getElementById('ad-frame').src = adLink;
     }
 
+    function updateLeaderboard() {
+        let all = bots.map(b => ({n: b.nick, s: Math.floor(b.r)}));
+        all.push({n: player.nick, s: Math.floor(player.r), me: true});
+        all.sort((a,b) => b.s - a.s);
+        document.getElementById('lb-content').innerHTML = all.slice(0, 7).map(i => 
+            `<div class="lb-item ${i.me?'me':''}"><span>${i.n}</span><span>${i.s}</span></div>`).join('');
+    }
+
     function update() {
         if(!gameActive) return;
 
-        ctx.fillStyle = '#050505';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Grid çizimi (Agar.io havası için)
-        ctx.strokeStyle = '#111';
-        ctx.lineWidth = 1;
-        for(let i=0; i<canvas.width; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
-        for(let i=0; i<canvas.height; i+=50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
-
-        // Oyuncu Hareketi (Yavaşlama kuralıyla)
-        let speed = Math.max(1.5, 5 - (player.r / 50)); 
-        let dx = mouse.x - player.x;
-        let dy = mouse.y - player.y;
-        let dist = Math.hypot(dx, dy);
-        
-        if(dist > 5) {
-            player.x += (dx / dist) * speed;
-            player.y += (dy / dist) * speed;
+        // --- PLAYER LOGIC ---
+        let speed = Math.max(1.2, 5 - (player.r / 80));
+        let dist = Math.hypot(mouse.x, mouse.y);
+        if(dist > 10) {
+            player.x += (mouse.x / dist) * speed;
+            player.y += (mouse.y / dist) * speed;
         }
+        player.x = Math.max(player.r, Math.min(world.w - player.r, player.x));
+        player.y = Math.max(player.r, Math.min(world.h - player.r, player.y));
+        if(player.r > 60) player.r -= 0.005; // Mass decay
 
-        // Sınır Kontrolü
-        player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
-        player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
+        // ZOOM LOGIC
+        let targetZoom = 40 / player.r;
+        player.zoom += (Math.max(0.25, targetZoom) - player.zoom) * 0.05;
 
-        // Yemekleri Çiz ve Ye
+        // --- DRAWING ---
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.fillStyle = '#050505'; ctx.fillRect(0,0,canvas.width, canvas.height);
+
+        ctx.translate(canvas.width/2, canvas.height/2);
+        ctx.scale(player.zoom, player.zoom);
+        ctx.translate(-player.x, -player.y);
+
+        // Grid
+        ctx.strokeStyle = '#111'; ctx.lineWidth = 4;
+        for(let i=0; i<=world.w; i+=200) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,world.h); ctx.stroke(); }
+        for(let i=0; i<=world.h; i+=200) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(world.w,i); ctx.stroke(); }
+
+        // Food
         foods.forEach((f, i) => {
-            ctx.fillStyle = f.color;
-            ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = f.c; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
+            if(Math.hypot(player.x - f.x, player.y - f.y) < player.r) { foods.splice(i,1); player.r += 0.8; spawnFood(); }
+        });
 
-            if(Math.hypot(player.x - f.x, player.y - f.y) < player.r) {
-                foods.splice(i, 1);
-                player.r += 0.5;
-                spawnFood();
+        // Bots
+        bots.forEach((b, i) => {
+            b.x += b.vx; b.y += b.vy;
+            if(b.x < 0 || b.x > world.w) b.vx *= -1;
+            if(b.y < 0 || b.y > world.h) b.vy *= -1;
+
+            ctx.fillStyle = b.c; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "white"; ctx.font = `${b.r/2}px Arial`; ctx.textAlign="center"; ctx.fillText(b.nick, b.x, b.y);
+
+            // Bot vs Player Collision
+            let d = Math.hypot(player.x - b.x, player.y - b.y);
+            if(d < player.r + b.r - 5) {
+                if(player.r > b.r * 1.15) { bots.splice(i,1); player.r += b.r/3; spawnBot(); }
+                else if(b.r > player.r * 1.15) { gameOver(); }
             }
         });
 
-        // Düşmanları (Botları) Çiz ve Kontrol Et
-        enemies.forEach((e, i) => {
-            e.x += e.vx; e.y += e.vy;
-            if(e.x < 0 || e.x > canvas.width) e.vx *= -1;
-            if(e.y < 0 || e.y > canvas.height) e.vy *= -1;
+        // Player
+        ctx.fillStyle = player.color; ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "black"; ctx.font = `bold ${player.r/2}px Arial`; ctx.fillText(player.nick, player.x, player.y);
 
-            ctx.font = `${e.r * 1.2}px Arial`;
-            ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            ctx.fillText(e.color, e.x, e.y);
-
-            let d = Math.hypot(player.x - e.x, player.y - e.y);
-            if(d < player.r + e.r - 10) {
-                if(player.r > e.r * 1.1) { // Sen büyüksen onu ye
-                    player.r += e.r / 4;
-                    enemies.splice(i, 1);
-                    setTimeout(spawnEnemy, 2000);
-                } else if(e.r > player.r * 1.1) { // O büyükse seni yer
-                    gameOver();
-                }
-            }
-        });
-
-        // Oyuncuyu Çiz
-        ctx.font = `${player.r * 1.2}px Arial`;
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(player.color, player.x, player.y);
-
+        if(Math.floor(Date.now()/1000) % 2 === 0) updateLeaderboard();
         requestAnimationFrame(update);
     }
 </script>
