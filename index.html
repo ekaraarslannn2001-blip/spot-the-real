@@ -6,31 +6,30 @@
     <title>Spot the Real</title>
     <style>
         :root { --primary: #00ffcc; --bg: #0f0f12; }
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; touch-action: none; color: white; }
-        canvas { display: block; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; touch-action: none; color: white; }
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        #ui { position: absolute; top: 20px; width: 100%; text-align: center; pointer-events: none; }
-        #score { font-size: 50px; font-weight: 900; text-shadow: 0 0 20px var(--primary); }
+        #ui { position: absolute; top: 30px; width: 100%; text-align: center; pointer-events: none; z-index: 5; }
+        #score { font-size: 60px; font-weight: 900; color: var(--primary); text-shadow: 0 0 15px rgba(0,255,204,0.5); }
         
-        #lang-select { position: absolute; top: 10px; right: 10px; pointer-events: auto; }
-        .lang-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--primary); color: white; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
+        #lang-select { position: absolute; top: 15px; right: 15px; z-index: 20; }
+        .lang-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--primary); color: white; padding: 8px 12px; cursor: pointer; border-radius: 5px; margin-left: 5px; }
 
         #overlay { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); display: flex; flex-direction: column; 
-            justify-content: center; align-items: center; z-index: 10;
+            background: rgba(0,0,0,0.85); display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 100;
         }
         
-        .menu-box { background: #1a1a20; padding: 40px; border-radius: 20px; border: 2px solid var(--primary); text-align: center; box-shadow: 0 0 30px rgba(0,255,204,0.2); }
-        h1 { margin: 0 0 10px 0; color: var(--primary); }
-        button { 
-            padding: 15px 40px; font-size: 20px; cursor: pointer; 
+        .menu-box { background: #1a1a20; padding: 30px; border-radius: 20px; border: 2px solid var(--primary); text-align: center; width: 85%; max-width: 400px; }
+        button#start-btn { 
+            padding: 15px 50px; font-size: 22px; cursor: pointer; 
             background: var(--primary); border: none; border-radius: 50px; 
-            font-weight: bold; transition: transform 0.2s; margin-top: 20px;
+            font-weight: bold; margin-top: 20px; transition: 0.2s;
         }
-        button:active { transform: scale(0.95); }
+        button#start-btn:hover { transform: scale(1.05); }
         
-        #ad-frame { margin-top: 20px; width: 300px; height: 100px; border: 1px dashed #555; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .ad-container { margin-top: 20px; min-height: 100px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; overflow: hidden; }
     </style>
 </head>
 <body>
@@ -45,4 +44,70 @@
     </div>
 
     <div id="overlay">
-        <div class="menu-
+        <div class="menu-box">
+            <h1 id="m-title">SPOT THE REAL</h1>
+            <p id="m-desc">Parlayan gerçek halkayı bul!</p>
+            <p id="m-final" style="display:none; font-size: 20px; color: var(--primary);"></p>
+            
+            <button id="start-btn" onclick="startGame()">BAŞLA</button>
+            
+            <div class="ad-container">
+                <iframe id="ad-frame" src="https://omg10.com/4/10619187" width="300" height="100" frameborder="0" scrolling="no"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const texts = {
+        tr: { title: "SPOT THE REAL", desc: "Zaman dolmadan parlayana tıkla!", final: "Skorun: ", btn: "BAŞLA" },
+        en: { title: "SPOT THE REAL", desc: "Click the glowing one before time's up!", final: "Score: ", btn: "START" }
+    };
+    let currentLang = 'tr';
+
+    let score = 0;
+    let gameActive = false;
+    let targets = [];
+    const adLink = "https://omg10.com/4/10619187";
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        document.getElementById('m-title').innerText = texts[lang].title;
+        document.getElementById('m-desc').innerText = texts[lang].desc;
+        document.getElementById('start-btn').innerText = texts[lang].btn;
+    }
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        if(gameActive) spawn();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Circle {
+        constructor(isReal) {
+            this.isReal = isReal;
+            this.size = 25 + Math.random() * 20;
+            // Ekrana sığacak şekilde rastgele pozisyon
+            this.x = Math.random() * (canvas.width - 100) + 50;
+            this.y = Math.random() * (canvas.height - 200) + 100;
+            this.color = isReal ? '#00ffcc' : '#222';
+            this.life = 1.0;
+            this.decay = 0.006 + (score * 0.0008); 
+        }
+        draw() {
+            ctx.globalAlpha = this.life;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            if(this.isReal) {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#00ffcc';
+            }
+            ctx.fill();
+            ctx.shadowBlur =
