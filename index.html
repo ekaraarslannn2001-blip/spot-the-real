@@ -3,48 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FLAG.IO - Global Arena</title>
+    <title>FLAG.IO - Joystick Pro</title>
     <style>
-        :root { --neon: #00ffcc; --pink: #ff00ff; --bg: #050505; }
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', Roboto, sans-serif; touch-action: none; color: white; }
+        :root { --neon: #00ffcc; --bg: #050505; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; color: white; }
         canvas { display: block; position: absolute; z-index: 1; }
 
-        /* UI Styling */
-        #ui-layer { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 12px; border: 1px solid var(--neon); pointer-events: none; z-index: 10; backdrop-filter: blur(5px); }
-        .lb-title { color: var(--neon); font-weight: 900; letter-spacing: 1px; font-size: 14px; text-align: center; margin-bottom: 5px; }
-        .lb-item { display: flex; justify-content: space-between; gap: 20px; font-size: 13px; margin-bottom: 2px; }
-        .me { color: var(--neon); text-shadow: 0 0 5px var(--neon); font-weight: bold; }
+        /* UI */
+        #ui-layer { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 12px; border: 1px solid var(--neon); pointer-events: none; z-index: 10; font-size: 12px; }
+        .lb-item { display: flex; justify-content: space-between; gap: 15px; }
+        .me { color: var(--neon); font-weight: bold; }
 
         /* Menus */
-        #overlay { position: absolute; inset: 0; background: radial-gradient(circle, rgba(20,20,20,0.8) 0%, rgba(0,0,0,1) 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .menu-box { background: #111; padding: 30px; border-radius: 25px; border: 2px solid var(--neon); text-align: center; width: 310px; box-shadow: 0 0 50px rgba(0, 255, 204, 0.2); }
+        #overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .menu-box { background: #111; padding: 25px; border-radius: 20px; border: 2px solid var(--neon); text-align: center; width: 280px; }
+        input { width: 85%; padding: 12px; margin: 15px 0; background: #000; border: 1px solid #333; color: white; border-radius: 8px; text-align: center; font-size: 16px; outline: none; }
         
-        h1 { color: var(--neon); margin: 0 0 5px 0; font-style: italic; letter-spacing: -1px; font-size: 36px; }
-        input { width: 90%; padding: 12px; margin: 15px 0; background: #000; border: 1px solid #333; color: white; border-radius: 8px; text-align: center; font-size: 18px; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--neon); }
+        .flag-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+        .flag { font-size: 24px; cursor: pointer; opacity: 0.4; transition: 0.2s; }
+        .flag.active { opacity: 1; transform: scale(1.2); }
 
-        .flag-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .flag { font-size: 28px; cursor: pointer; filter: grayscale(1); transition: 0.3s; }
-        .flag.active { filter: grayscale(0); transform: scale(1.3); }
-
-        .btn { width: 100%; padding: 16px; background: var(--neon); border: none; border-radius: 12px; font-weight: 900; cursor: pointer; color: #000; font-size: 18px; text-transform: uppercase; margin-top: 10px; }
+        .btn { width: 100%; padding: 15px; background: var(--neon); border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: #000; margin-top: 8px; }
         #share-btn { background: #25D366; color: white; display: none; }
-
-        #ad-box { margin-top: 15px; border-radius: 10px; border: 1px dashed #444; height: 100px; overflow: hidden; }
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
-        <div class="lb-title">TOP RANKING</div>
+        <div style="color:var(--neon); text-align:center; font-weight:bold; margin-bottom:5px;">TOP 5</div>
         <div id="lb-content"></div>
     </div>
 
     <div id="overlay">
         <div class="menu-box">
-            <h1>FLAG.IO</h1>
+            <h1 style="color:var(--neon); margin:0; font-style:italic;">FLAG.IO</h1>
             <input type="text" id="nick" placeholder="NICKNAME" maxlength="10">
-            
             <div class="flag-grid">
                 <span class="flag active" onclick="setF(this, '🇹🇷')">🇹🇷</span>
                 <span class="flag" onclick="setF(this, '🇺🇸')">🇺🇸</span>
@@ -53,12 +46,11 @@
                 <span class="flag" onclick="setF(this, '🇬🇧')">🇬🇧</span>
                 <span class="flag" onclick="setF(this, '🇫🇷')">🇫🇷</span>
                 <span class="flag" onclick="setF(this, '🇯🇵')">🇯🇵</span>
-                <span class="flag" onclick="setF(this, '🇪🇸')">🇪🇸</span>
+                <span class="flag" onclick="setF(this, '🇮🇹')">🇮🇹</span>
             </div>
-
-            <button id="start-btn" class="btn" onclick="play()">CONNECT</button>
+            <button class="btn" onclick="play()">START</button>
             <button id="share-btn" class="btn" onclick="share()">SHARE SCORE</button>
-            <div id="ad-box"><iframe id="ad-frame" width="300" height="100" frameborder="0"></iframe></div>
+            <div style="margin-top:10px;"><iframe id="ad-frame" width="280" height="80" frameborder="0"></iframe></div>
         </div>
     </div>
 
@@ -67,34 +59,69 @@
 <script>
     const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
     const adL = "https://omg10.com/4/10619187";
-    let active = false, w = { w: 4500, h: 4500 }, player = { x: 2250, y: 2250, r: 35, n: "", z: 1, f: "🇹🇷" };
-    let m = { x: 0, y: 0 }, foods = [], bots = [], score = 0;
-    const bF = ['🇨🇦','🇦🇺','🇮🇹','🇰🇷','🇲🇽','🇮🇳'], bN = ["Flash", "Ghost", "King", "Slayer", "Shadow", "Alpha"];
+    let active = false, w = { w: 4000, h: 4000 }, player = { x: 2000, y: 2000, r: 35, n: "", z: 1, f: "🇹🇷" };
+    let foods = [], bots = [];
+    
+    // Joystick Logic
+    let joy = { active: false, base: {x:0, y:0}, stick: {x:0, y:0}, dir: {x:0, y:0} };
 
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     window.addEventListener('resize', resize); resize();
 
-    const move = (e) => {
-        let x = e.touches ? e.touches[0].clientX : e.clientX;
-        let y = e.touches ? e.touches[0].clientY : e.clientY;
-        m.x = x - canvas.width/2; m.y = y - canvas.height/2;
-    };
-    window.addEventListener('mousemove', move);
-    window.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, {passive: false});
+    // Touch Events
+    window.addEventListener('touchstart', e => {
+        if(!active) return;
+        joy.active = true;
+        joy.base.x = e.touches[0].clientX;
+        joy.base.y = e.touches[0].clientY;
+        joy.stick.x = joy.base.x;
+        joy.stick.y = joy.base.y;
+    });
+
+    window.addEventListener('touchmove', e => {
+        if(!joy.active) return;
+        e.preventDefault();
+        let touch = e.touches[0];
+        let dx = touch.clientX - joy.base.x;
+        let dy = touch.clientY - joy.base.y;
+        let dist = Math.hypot(dx, dy);
+        let max = 50;
+        
+        if(dist > max) {
+            joy.stick.x = joy.base.x + (dx/dist) * max;
+            joy.stick.y = joy.base.y + (dy/dist) * max;
+        } else {
+            joy.stick.x = touch.clientX;
+            joy.stick.y = touch.clientY;
+        }
+        joy.dir.x = dx / max;
+        joy.dir.y = dy / max;
+    }, {passive: false});
+
+    window.addEventListener('touchend', () => { joy.active = false; joy.dir = {x:0, y:0}; });
+
+    // Desktop Mouse (Alternative)
+    window.addEventListener('mousemove', e => {
+        if(!active || joy.active) return;
+        let dx = e.clientX - canvas.width/2;
+        let dy = e.clientY - canvas.height/2;
+        let d = Math.hypot(dx, dy);
+        joy.dir.x = dx/d; joy.dir.y = dy/d;
+    });
 
     function setF(el, f) {
         document.querySelectorAll('.flag').forEach(x => x.classList.remove('active'));
         el.classList.add('active'); player.f = f;
     }
 
-    function spawnF() { foods.push({ x: Math.random()*w.w, y: Math.random()*w.h, r: 6, c: `hsl(${Math.random()*360}, 80%, 60%)` }); }
-    function spawnB() { bots.push({ x: Math.random()*w.w, y: Math.random()*w.h, r: 25 + Math.random()*80, f: bF[Math.floor(Math.random()*bF.length)], n: bN[Math.floor(Math.random()*bN.length)], vx: (Math.random()-0.5)*4, vy: (Math.random()-0.5)*4 }); }
+    function spawnF() { foods.push({ x: Math.random()*w.w, y: Math.random()*w.h, r: 5, c: `hsl(${Math.random()*360}, 70%, 60%)` }); }
+    function spawnB() { bots.push({ x: Math.random()*w.w, y: Math.random()*w.h, r: 20 + Math.random()*70, f: '🇺🇸', n: "Bot", vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3 }); }
 
     function play() {
         player.n = document.getElementById('nick').value || "Guest";
-        foods = []; bots = []; score = 0; player.r = 35;
-        for(let i=0; i<450; i++) spawnF();
-        for(let i=0; i<12; i++) spawnB();
+        foods = []; bots = []; player.r = 35;
+        for(let i=0; i<300; i++) spawnF();
+        for(let i=0; i<10; i++) spawnB();
         active = true;
         document.getElementById('overlay').style.display = 'none';
         document.getElementById('share-btn').style.display = 'none';
@@ -103,59 +130,68 @@
     }
 
     function share() {
-        const text = `I just reached ${Math.floor(player.r)} mass in FLAG.IO! 🚩 Can you beat my score? \nPlay now: ${window.location.href}`;
+        const text = `I am at ${Math.floor(player.r)} mass on FLAG.IO! 🚩 Can you beat me? \nPlay: ${window.location.href}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
 
     function upd() {
         if(!active) return;
-        let s = Math.max(1.8, 7 - (player.r / 70)), d = Math.hypot(m.x, m.y);
-        if(d > 10) { player.x += (m.x/d)*s; player.y += (m.y/d)*s; }
-        player.x = Math.max(player.r, Math.min(w.w - player.r, player.x));
-        player.y = Math.max(player.r, Math.min(w.h - player.r, player.y));
-        if(player.r > 60) player.r -= 0.01;
-        player.z += (Math.max(0.25, 40 / player.r) - player.z) * 0.1;
+
+        // Player Move
+        let speed = Math.max(1.5, 6 - (player.r / 60));
+        player.x += joy.dir.x * speed;
+        player.y += joy.dir.y * speed;
+        player.x = Math.max(player.r, Math.min(w.w-player.r, player.x));
+        player.y = Math.max(player.r, Math.min(w.h-player.r, player.y));
+        player.z += (Math.max(0.3, 40 / player.r) - player.z) * 0.1;
 
         ctx.setTransform(1,0,0,1,0,0);
         ctx.fillStyle = '#050505'; ctx.fillRect(0,0,canvas.width, canvas.height);
+
+        // Joystick Render
+        if(joy.active) {
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.3)'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(joy.base.x, joy.base.y, 50, 0, Math.PI*2); ctx.stroke();
+            ctx.fillStyle = 'rgba(0, 255, 204, 0.2)';
+            ctx.beginPath(); ctx.arc(joy.stick.x, joy.stick.y, 25, 0, Math.PI*2); ctx.fill();
+        }
+
         ctx.translate(canvas.width/2, canvas.height/2);
         ctx.scale(player.z, player.z); ctx.translate(-player.x, -player.y);
 
-        // Grid Visual
+        // Grid
         ctx.strokeStyle = '#0a1a1a'; ctx.lineWidth = 4;
-        for(let i=0; i<=w.w; i+=250) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,w.h); ctx.stroke(); }
-        for(let i=0; i<=w.h; i+=250) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(w.w,i); ctx.stroke(); }
+        for(let i=0; i<=w.w; i+=200) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,w.h); ctx.stroke(); }
+        for(let i=0; i<=world.h; i+=200) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(world.w,i); ctx.stroke(); }
 
         foods.forEach((f, i) => {
-            ctx.shadowBlur = 10; ctx.shadowColor = f.c; ctx.fillStyle = f.c;
-            ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
-            if(Math.hypot(player.x-f.x, player.y-f.y) < player.r) { foods.splice(i,1); player.r += 0.9; spawnF(); }
+            ctx.fillStyle = f.c; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
+            if(Math.hypot(player.x-f.x, player.y-f.y) < player.r) { foods.splice(i,1); player.r += 0.7; spawnF(); }
         });
-        ctx.shadowBlur = 0;
 
         bots.forEach((b, i) => {
             b.x += b.vx; b.y += b.vy;
-            if(b.x < b.r || b.x > w.w - b.r) b.vx *= -1;
-            if(b.y < b.r || b.y > w.h - b.r) b.vy *= -1;
-            ctx.font = `${b.r * 1.4}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(b.f, b.x, b.y);
-            let dist = Math.hypot(player.x - b.x, player.y - b.y);
-            if(dist < player.r + b.r - 10) {
-                if(player.r > b.r * 1.1) { bots.splice(i,1); player.r += b.r/3; spawnB(); }
+            if(b.x < b.r || b.x > w.w-b.r) b.vx *= -1;
+            if(b.y < b.r || b.y > w.h-b.r) b.vy *= -1;
+            ctx.font = `${b.r * 1.3}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle";
+            ctx.fillText(b.f, b.x, b.y);
+            let d = Math.hypot(player.x - b.x, player.y - b.y);
+            if(d < player.r + b.r - 10) {
+                if(player.r > b.r * 1.1) { bots.splice(i,1); player.r += b.r/4; spawnB(); }
                 else if(b.r > player.r * 1.1) { 
-                    active = false; 
-                    document.getElementById('overlay').style.display='flex'; 
+                    active = false; document.getElementById('overlay').style.display='flex'; 
                     document.getElementById('share-btn').style.display='block';
                     document.getElementById('ad-frame').src=adL;
                 }
             }
         });
 
-        ctx.font = `${player.r * 1.4}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.font = `${player.r * 1.3}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle";
         ctx.fillText(player.f, player.x, player.y);
 
         if(Math.floor(Date.now()/500) % 2 === 0) {
             let lb = bots.map(x=>({n:x.n, s:Math.floor(x.r)})).concat([{n:player.n, s:Math.floor(player.r), me:true}]).sort((a,b)=>b.s-a.s);
-            document.getElementById('lb-content').innerHTML = lb.slice(0,6).map(x=>`<div class="lb-item ${x.me?'me':''}"><span>${x.n}</span><span>${x.s}</span></div>`).join('');
+            document.getElementById('lb-content').innerHTML = lb.slice(0,5).map(x=>`<div class="lb-item ${x.me?'me':''}"><span>${x.n}</span><span>${x.s}</span></div>`).join('');
         }
         requestAnimationFrame(upd);
     }
