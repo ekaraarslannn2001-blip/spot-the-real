@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FLAG.IO - Revive Pro</title>
+    <title>FLAG.IO - Strategic Arena</title>
     <style>
-        :root { --neon: #00ffcc; --bg: #050505; }
+        :root { --neon: #00ffcc; --bg: #050505; --virus: #44ff44; }
         body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; color: white; }
         canvas { display: block; position: absolute; z-index: 1; }
 
@@ -47,8 +47,8 @@
                 <span class="flag" onclick="setF(this, '🇯🇵')">🇯🇵</span>
                 <span class="flag" onclick="setF(this, '🇮🇹')">🇮🇹</span>
             </div>
-            <button id="revive-btn" class="btn" onclick="revive()">CONTINUE (HALF SIZE)</button>
-            <button class="btn" onclick="play(true)">START NEW</button>
+            <button id="revive-btn" class="btn" onclick="revive()">CONTINUE (REVIVE)</button>
+            <button class="btn" onclick="play(true)">START ARENA</button>
             <button id="share-btn" class="btn" onclick="share()">SHARE SCORE</button>
             <div style="margin-top:10px;"><iframe id="ad-frame" width="280" height="80" frameborder="0"></iframe></div>
         </div>
@@ -59,8 +59,9 @@
 <script>
     const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
     const adL = "https://omg10.com/4/10619187";
-    let active = false, w = { w: 4000, h: 4000 }, player = { x: 2000, y: 2000, r: 35, n: "", z: 1, f: "🇹🇷" };
-    let foods = [], bots = [], lastMass = 35;
+    let active = false, w = { w: 4000, h: 4000 };
+    let player = { x: 2000, y: 2000, r: 35, n: "", z: 1, f: "🇹🇷", protected: 0 };
+    let foods = [], bots = [], viruses = [], lastMass = 35;
     let joy = { active: false, base: {x:0, y:0}, stick: {x:0, y:0}, dir: {x:0, y:0} };
 
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -78,11 +79,30 @@
 
     function setF(el, f) { document.querySelectorAll('.flag').forEach(x => x.classList.remove('active')); el.classList.add('active'); player.f = f; }
     function spawnF() { foods.push({ x: Math.random()*w.w, y: Math.random()*w.h, r: 5, c: `hsl(${Math.random()*360}, 70%, 60%)` }); }
-    function spawnB() { bots.push({ x: Math.random()*w.w, y: Math.random()*w.h, r: 20 + Math.random()*70, f: ['🇹🇷','🇺🇸','🇩🇪','🇬🇧'][Math.floor(Math.random()*4)], n: "Bot", vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3 }); }
+    function spawnB() { bots.push({ x: Math.random()*w.w, y: Math.random()*w.h, r: 25 + Math.random()*60, f: ['🇺🇸','🇩🇪','🇬🇧','🇫🇷'][Math.floor(Math.random()*4)], n: "Bot_"+Math.floor(Math.random()*99), vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2 }); }
+    function spawnV() { viruses.push({ x: Math.random()*w.w, y: Math.random()*w.h, r: 60 }); }
+
+    function findSafeSpawn() {
+        let safe = false;
+        while(!safe) {
+            player.x = 500 + Math.random() * (w.w - 1000);
+            player.y = 500 + Math.random() * (w.h - 1000);
+            safe = bots.every(b => Math.hypot(player.x - b.x, player.y - b.y) > 500);
+            if(bots.length === 0) safe = true;
+        }
+    }
 
     function play(isNew) {
-        if(isNew) { player.r = 35; foods = []; bots = []; for(let i=0; i<300; i++) spawnF(); for(let i=0; i<10; i++) spawnB(); }
+        if(isNew) { 
+            foods = []; bots = []; viruses = [];
+            for(let i=0; i<350; i++) spawnF(); 
+            for(let i=0; i<12; i++) spawnB();
+            for(let i=0; i<8; i++) spawnV();
+            player.r = 35;
+        }
+        findSafeSpawn();
         player.n = document.getElementById('nick').value || "Guest";
+        player.protected = Date.now() + 3000; // 3 saniye koruma
         active = true;
         document.getElementById('overlay').style.display = 'none';
         document.getElementById('revive-btn').style.display = 'none';
@@ -93,7 +113,7 @@
 
     function revive() {
         window.open(adL, '_blank');
-        player.r = Math.max(35, lastMass / 2); // Yarısı kadar ama minimum 35
+        player.r = Math.max(35, lastMass / 2);
         play(false);
     }
 
@@ -103,11 +123,13 @@
 
     function upd() {
         if(!active) return;
-        let s = Math.max(1.5, 6 - (player.r / 60));
+        let now = Date.now();
+        // Hız biraz daha yavaşlatıldı (Denge için)
+        let s = Math.max(1.2, 4.5 - (player.r / 80));
         player.x += joy.dir.x * s; player.y += joy.dir.y * s;
         player.x = Math.max(player.r, Math.min(w.w-player.r, player.x));
         player.y = Math.max(player.r, Math.min(w.h-player.r, player.y));
-        player.z += (Math.max(0.3, 40/player.r) - player.z) * 0.1;
+        player.z += (Math.max(0.3, 45/player.r) - player.z) * 0.05;
 
         ctx.setTransform(1,0,0,1,0,0);
         ctx.fillStyle = '#050505'; ctx.fillRect(0,0,canvas.width, canvas.height);
@@ -122,19 +144,42 @@
         ctx.translate(canvas.width/2, canvas.height/2);
         ctx.scale(player.z, player.z); ctx.translate(-player.x, -player.y);
 
+        // Grid
+        ctx.strokeStyle = '#0a1a1a'; ctx.lineWidth = 4;
+        for(let i=0; i<=w.w; i+=400) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,w.h); ctx.stroke(); }
+        for(let i=0; i<=w.h; i+=400) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(world.w,i); ctx.stroke(); }
+
+        // Viruses (Yeşil Engel)
+        viruses.forEach((v, i) => {
+            ctx.fillStyle = '#44ff44'; ctx.beginPath();
+            for(let a=0; a<20; a++) {
+                let r = a%2==0 ? v.r : v.r-15;
+                let angle = (a/20)*Math.PI*2;
+                ctx.lineTo(v.x + Math.cos(angle)*r, v.y + Math.sin(angle)*r);
+            }
+            ctx.closePath(); ctx.fill();
+            if(Math.hypot(player.x-v.x, player.y-v.y) < player.r + v.r - 20) {
+                if(player.r > v.r + 10) { player.r *= 0.7; viruses.splice(i,1); spawnV(); }
+            }
+        });
+
         foods.forEach((f, i) => {
             ctx.fillStyle = f.c; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
-            if(Math.hypot(player.x-f.x, player.y-f.y) < player.r) { foods.splice(i,1); player.r += 0.7; spawnF(); }
+            if(Math.hypot(player.x-f.x, player.y-f.y) < player.r) { foods.splice(i,1); player.r += 0.8; spawnF(); }
         });
 
         bots.forEach((b, i) => {
             b.x += b.vx; b.y += b.vy;
             if(b.x < b.r || b.x > w.w-b.r) b.vx *= -1;
             if(b.y < b.r || b.y > w.h-b.r) b.vy *= -1;
-            ctx.font = `${b.r * 1.3}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(b.f, b.x, b.y);
-            if(Math.hypot(player.x-b.x, player.y-b.y) < player.r + b.r - 10) {
-                if(player.r > b.r * 1.1) { bots.splice(i,1); player.r += b.r/4; spawnB(); }
-                else if(b.r > player.r * 1.1) { 
+            ctx.font = `${b.r * 1.3}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle";
+            ctx.fillText(b.f, b.x, b.y);
+            
+            let dist = Math.hypot(player.x-b.x, player.y-b.y);
+            if(dist < player.r + b.r - 15) {
+                if(now < player.protected) return; // Koruma varsa ölme
+                if(player.r > b.r * 1.15) { bots.splice(i,1); player.r += b.r/3; spawnB(); }
+                else if(b.r > player.r * 1.15) { 
                     active = false; lastMass = player.r;
                     document.getElementById('overlay').style.display='flex'; 
                     document.getElementById('revive-btn').style.display='block';
@@ -144,10 +189,14 @@
             }
         });
 
+        // Player Render
+        ctx.save();
+        if(now < player.protected) ctx.globalAlpha = 0.5; // Koruma görseli
         ctx.font = `${player.r * 1.3}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle";
         ctx.fillText(player.f, player.x, player.y);
+        ctx.restore();
 
-        if(Math.floor(Date.now()/500)%2===0) {
+        if(Math.floor(now/500)%2===0) {
             let lb = bots.map(x=>({n:x.n, s:Math.floor(x.r)})).concat([{n:player.n, s:Math.floor(player.r), me:true}]).sort((a,b)=>b.s-a.s);
             document.getElementById('lb-content').innerHTML = lb.slice(0,5).map(x=>`<div class="lb-item ${x.me?'me':''}"><span>${x.n}</span><span>${x.s}</span></div>`).join('');
         }
