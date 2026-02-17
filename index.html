@@ -3,39 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FLAG.IO - Strategic Arena</title>
+    <title>FLAG.IO - Stable</title>
     <style>
-        :root { --neon: #00ffcc; --bg: #050505; --virus: #44ff44; }
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; color: white; }
+        :root { --neon: #00ffcc; --bg: #050505; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; touch-action: none; color: white; }
         canvas { display: block; position: absolute; z-index: 1; }
 
-        #ui-layer { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 12px; border: 1px solid var(--neon); pointer-events: none; z-index: 10; font-size: 12px; }
-        .lb-item { display: flex; justify-content: space-between; gap: 15px; }
-        .me { color: var(--neon); font-weight: bold; }
-
+        /* UI */
+        #ui-layer { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 10px; border: 1px solid var(--neon); pointer-events: none; z-index: 10; font-size: 12px; }
         #overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .menu-box { background: #111; padding: 25px; border-radius: 20px; border: 2px solid var(--neon); text-align: center; width: 280px; }
-        input { width: 85%; padding: 12px; margin: 15px 0; background: #000; border: 1px solid #333; color: white; border-radius: 8px; text-align: center; font-size: 16px; outline: none; }
         
+        input { width: 85%; padding: 10px; margin: 10px 0; background: #000; border: 1px solid #333; color: white; border-radius: 8px; text-align: center; font-size: 16px; outline: none; }
         .flag-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
-        .flag { font-size: 24px; cursor: pointer; opacity: 0.4; transition: 0.2s; }
+        .flag { font-size: 24px; cursor: pointer; opacity: 0.4; }
         .flag.active { opacity: 1; transform: scale(1.2); }
-
         .btn { width: 100%; padding: 15px; background: var(--neon); border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: #000; margin-top: 8px; text-transform: uppercase; }
-        #revive-btn { background: #ffcc00; display: none; margin-bottom: 5px; }
-        #share-btn { background: #25D366; color: white; display: none; }
+        #revive-btn { background: #ffcc00; display: none; }
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
-        <div style="color:var(--neon); text-align:center; font-weight:bold; margin-bottom:5px;">TOP 5</div>
+        <div style="color:var(--neon); text-align:center; font-weight:bold; margin-bottom:5px;">TOP RANKING</div>
         <div id="lb-content"></div>
     </div>
 
     <div id="overlay">
         <div class="menu-box">
-            <h1 style="color:var(--neon); margin:0; font-style:italic;">FLAG.IO</h1>
+            <h1 style="color:var(--neon); margin:0;">FLAG.IO</h1>
             <input type="text" id="nick" placeholder="NICKNAME" maxlength="10">
             <div class="flag-grid">
                 <span class="flag active" onclick="setF(this, '🇹🇷')">🇹🇷</span>
@@ -47,9 +43,8 @@
                 <span class="flag" onclick="setF(this, '🇯🇵')">🇯🇵</span>
                 <span class="flag" onclick="setF(this, '🇮🇹')">🇮🇹</span>
             </div>
-            <button id="revive-btn" class="btn" onclick="revive()">CONTINUE (REVIVE)</button>
-            <button class="btn" onclick="play(true)">START ARENA</button>
-            <button id="share-btn" class="btn" onclick="share()">SHARE SCORE</button>
+            <button id="revive-btn" class="btn" onclick="revive()">REVIVE (X0.5)</button>
+            <button class="btn" onclick="play(true)">START GAME</button>
             <div style="margin-top:10px;"><iframe id="ad-frame" width="280" height="80" frameborder="0"></iframe></div>
         </div>
     </div>
@@ -59,15 +54,23 @@
 <script>
     const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
     const adL = "https://omg10.com/4/10619187";
-    let active = false, w = { w: 4000, h: 4000 };
-    let player = { x: 2000, y: 2000, r: 35, n: "", z: 1, f: "🇹🇷", protected: 0 };
+    
+    // Oyun Ayarları
+    let active = false, worldSize = 4000;
+    let player = { x: 2000, y: 2000, r: 35, n: "Guest", z: 1, f: "🇹🇷", protected: 0 };
     let foods = [], bots = [], viruses = [], lastMass = 35;
     let joy = { active: false, base: {x:0, y:0}, stick: {x:0, y:0}, dir: {x:0, y:0} };
 
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     window.addEventListener('resize', resize); resize();
 
-    window.addEventListener('touchstart', e => { if(!active) return; joy.active = true; joy.base = {x: e.touches[0].clientX, y: e.touches[0].clientY}; joy.stick = {...joy.base}; });
+    // Kontroller
+    window.addEventListener('touchstart', e => { 
+        if(!active) return;
+        joy.active = true;
+        joy.base = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+        joy.stick = {...joy.base};
+    });
     window.addEventListener('touchmove', e => {
         if(!joy.active) return; e.preventDefault();
         let t = e.touches[0], dx = t.clientX - joy.base.x, dy = t.clientY - joy.base.y, d = Math.hypot(dx, dy), max = 50;
@@ -78,62 +81,44 @@
     window.addEventListener('touchend', () => { joy.active = false; joy.dir = {x:0, y:0}; });
 
     function setF(el, f) { document.querySelectorAll('.flag').forEach(x => x.classList.remove('active')); el.classList.add('active'); player.f = f; }
-    function spawnF() { foods.push({ x: Math.random()*w.w, y: Math.random()*w.h, r: 5, c: `hsl(${Math.random()*360}, 70%, 60%)` }); }
-    function spawnB() { bots.push({ x: Math.random()*w.w, y: Math.random()*w.h, r: 25 + Math.random()*60, f: ['🇺🇸','🇩🇪','🇬🇧','🇫🇷'][Math.floor(Math.random()*4)], n: "Bot_"+Math.floor(Math.random()*99), vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2 }); }
-    function spawnV() { viruses.push({ x: Math.random()*w.w, y: Math.random()*w.h, r: 60 }); }
-
-    function findSafeSpawn() {
-        let safe = false;
-        while(!safe) {
-            player.x = 500 + Math.random() * (w.w - 1000);
-            player.y = 500 + Math.random() * (w.h - 1000);
-            safe = bots.every(b => Math.hypot(player.x - b.x, player.y - b.y) > 500);
-            if(bots.length === 0) safe = true;
-        }
-    }
+    function spawnF() { foods.push({ x: Math.random()*worldSize, y: Math.random()*worldSize, r: 5, c: `hsl(${Math.random()*360}, 70%, 60%)` }); }
+    function spawnB() { bots.push({ x: Math.random()*worldSize, y: Math.random()*worldSize, r: 25 + Math.random()*60, f: '🇺🇸', n: "Bot_"+Math.floor(Math.random()*99), vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2 }); }
+    function spawnV() { viruses.push({ x: Math.random()*worldSize, y: Math.random()*worldSize, r: 60 }); }
 
     function play(isNew) {
         if(isNew) { 
             foods = []; bots = []; viruses = [];
-            for(let i=0; i<350; i++) spawnF(); 
-            for(let i=0; i<12; i++) spawnB();
-            for(let i=0; i<8; i++) spawnV();
+            for(let i=0; i<300; i++) spawnF(); 
+            for(let i=0; i<10; i++) spawnB();
+            for(let i=0; i<6; i++) spawnV();
             player.r = 35;
         }
-        findSafeSpawn();
+        player.x = 500 + Math.random()*(worldSize-1000);
+        player.y = 500 + Math.random()*(worldSize-1000);
         player.n = document.getElementById('nick').value || "Guest";
-        player.protected = Date.now() + 3000; // 3 saniye koruma
+        player.protected = Date.now() + 3000;
         active = true;
         document.getElementById('overlay').style.display = 'none';
         document.getElementById('revive-btn').style.display = 'none';
-        document.getElementById('share-btn').style.display = 'none';
         document.getElementById('ad-frame').src = "about:blank";
         requestAnimationFrame(upd);
     }
 
-    function revive() {
-        window.open(adL, '_blank');
-        player.r = Math.max(35, lastMass / 2);
-        play(false);
-    }
-
-    function share() {
-        window.open(`https://wa.me/?text=${encodeURIComponent("I hit "+Math.floor(lastMass)+" mass on FLAG.IO! 🚩 Beat me: "+window.location.href)}`, '_blank');
-    }
+    function revive() { window.open(adL, '_blank'); player.r = Math.max(35, lastMass / 2); play(false); }
 
     function upd() {
         if(!active) return;
         let now = Date.now();
-        // Hız biraz daha yavaşlatıldı (Denge için)
         let s = Math.max(1.2, 4.5 - (player.r / 80));
         player.x += joy.dir.x * s; player.y += joy.dir.y * s;
-        player.x = Math.max(player.r, Math.min(w.w-player.r, player.x));
-        player.y = Math.max(player.r, Math.min(w.h-player.r, player.y));
+        player.x = Math.max(player.r, Math.min(worldSize-player.r, player.x));
+        player.y = Math.max(player.r, Math.min(worldSize-player.r, player.y));
         player.z += (Math.max(0.3, 45/player.r) - player.z) * 0.05;
 
         ctx.setTransform(1,0,0,1,0,0);
         ctx.fillStyle = '#050505'; ctx.fillRect(0,0,canvas.width, canvas.height);
 
+        // Joystick Çizimi
         if(joy.active) {
             ctx.strokeStyle = 'rgba(0, 255, 204, 0.3)'; ctx.lineWidth = 3;
             ctx.beginPath(); ctx.arc(joy.base.x, joy.base.y, 50, 0, Math.PI*2); ctx.stroke();
@@ -144,12 +129,11 @@
         ctx.translate(canvas.width/2, canvas.height/2);
         ctx.scale(player.z, player.z); ctx.translate(-player.x, -player.y);
 
-        // Grid
-        ctx.strokeStyle = '#0a1a1a'; ctx.lineWidth = 4;
-        for(let i=0; i<=w.w; i+=400) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,w.h); ctx.stroke(); }
-        for(let i=0; i<=w.h; i+=400) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(world.w,i); ctx.stroke(); }
+        // Grid (Izgara)
+        ctx.strokeStyle = '#111'; ctx.lineWidth = 2;
+        for(let i=0; i<=worldSize; i+=200) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,worldSize); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(worldSize,i); ctx.stroke(); }
 
-        // Viruses (Yeşil Engel)
+        // Viruses (Dikenler)
         viruses.forEach((v, i) => {
             ctx.fillStyle = '#44ff44'; ctx.beginPath();
             for(let a=0; a<20; a++) {
@@ -159,43 +143,44 @@
             }
             ctx.closePath(); ctx.fill();
             if(Math.hypot(player.x-v.x, player.y-v.y) < player.r + v.r - 20) {
-                if(player.r > v.r + 10) { player.r *= 0.7; viruses.splice(i,1); spawnV(); }
+                if(player.r > v.r + 5) { player.r *= 0.75; viruses.splice(i,1); spawnV(); }
             }
         });
 
+        // Yemekler
         foods.forEach((f, i) => {
             ctx.fillStyle = f.c; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
             if(Math.hypot(player.x-f.x, player.y-f.y) < player.r) { foods.splice(i,1); player.r += 0.8; spawnF(); }
         });
 
+        // Botlar
         bots.forEach((b, i) => {
             b.x += b.vx; b.y += b.vy;
-            if(b.x < b.r || b.x > w.w-b.r) b.vx *= -1;
-            if(b.y < b.r || b.y > w.h-b.r) b.vy *= -1;
+            if(b.x < b.r || b.x > worldSize-b.r) b.vx *= -1;
+            if(b.y < b.r || b.y > worldSize-b.r) b.vy *= -1;
             ctx.font = `${b.r * 1.3}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle";
             ctx.fillText(b.f, b.x, b.y);
             
-            let dist = Math.hypot(player.x-b.x, player.y-b.y);
-            if(dist < player.r + b.r - 15) {
-                if(now < player.protected) return; // Koruma varsa ölme
-                if(player.r > b.r * 1.15) { bots.splice(i,1); player.r += b.r/3; spawnB(); }
+            if(Math.hypot(player.x-b.x, player.y-b.y) < player.r + b.r - 15) {
+                if(now < player.protected) return;
+                if(player.r > b.r * 1.15) { bots.splice(i,1); player.r += b.r/4; spawnB(); }
                 else if(b.r > player.r * 1.15) { 
                     active = false; lastMass = player.r;
                     document.getElementById('overlay').style.display='flex'; 
                     document.getElementById('revive-btn').style.display='block';
-                    document.getElementById('share-btn').style.display='block';
                     document.getElementById('ad-frame').src=adL;
                 }
             }
         });
 
-        // Player Render
+        // Oyuncu
         ctx.save();
-        if(now < player.protected) ctx.globalAlpha = 0.5; // Koruma görseli
+        if(now < player.protected) ctx.globalAlpha = 0.5;
         ctx.font = `${player.r * 1.3}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle";
         ctx.fillText(player.f, player.x, player.y);
         ctx.restore();
 
+        // Leaderboard
         if(Math.floor(now/500)%2===0) {
             let lb = bots.map(x=>({n:x.n, s:Math.floor(x.r)})).concat([{n:player.n, s:Math.floor(player.r), me:true}]).sort((a,b)=>b.s-a.s);
             document.getElementById('lb-content').innerHTML = lb.slice(0,5).map(x=>`<div class="lb-item ${x.me?'me':''}"><span>${x.n}</span><span>${x.s}</span></div>`).join('');
